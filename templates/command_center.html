@@ -1,0 +1,766 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if lang=='ta' %}நிதி கட்டுப்பாட்டு மையம்{% else %}Financial Command Center{% endif %} - WalletIQ
+{% endblock %}
+
+{% block extra_style %}
+/* Command Center Custom Glassmorphic Styles */
+.command-container {
+  padding: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+}
+.center-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1024px) {
+  .center-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Glassmorphic Panel */
+.glass-panel {
+  background: rgba(30, 41, 59, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  padding: 22px;
+}
+
+/* Notification Drawer Overlay */
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 400px;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1050;
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+}
+.drawer-overlay.open {
+  right: 0;
+}
+.drawer-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.drawer-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Interactive Calendar */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.calendar-day-label {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #5f748d;
+  padding: 6px 0;
+}
+.calendar-day {
+  aspect-ratio: 1.1;
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.15s;
+  min-height: 52px;
+}
+.calendar-day:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.calendar-day.today {
+  border-color: #ec4899;
+  background: rgba(236, 72, 153, 0.08);
+}
+.calendar-day.other-month {
+  opacity: 0.25;
+  pointer-events: none;
+}
+.day-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8f9cae;
+}
+.day-dots {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  max-height: 18px;
+  overflow: hidden;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.dot-salary { background-color: #10b981; }
+.dot-bill { background-color: #ef4444; }
+.dot-paid { background-color: #3b82f6; }
+
+/* Timeline Commitments */
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.timeline-item {
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.15s;
+}
+.timeline-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Priority Badge colors */
+.p-critical { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+.p-high { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+.p-medium { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.25); }
+.p-low { background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25); }
+
+/* Floating action button */
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(236,72,153,0.4);
+  cursor: pointer;
+  z-index: 1000;
+  border: none;
+  font-size: 24px;
+  color: #fff;
+  transition: transform 0.2s;
+}
+.fab:hover {
+  transform: scale(1.1) rotate(90deg);
+}
+
+/* Modal styles override */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 1100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open {
+  display: flex;
+}
+.modal-box {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="command-container">
+
+  <!-- Page Header -->
+  <div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 style="font-size: 28px; font-weight: 700; color: #fff; margin: 0 0 6px 0; background: linear-gradient(135deg, #fff 30%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        {% if lang=='ta' %}நிதி கட்டுப்பாட்டு மையம்{% else %}Financial Command Center{% endif %}
+      </h1>
+      <p style="font-size: 14px; color: #8f9cae; margin: 0;">
+        {% if lang=='ta' %}கட்டண நினைவூட்டல்கள், தானியங்கி காலண்டர் மற்றும் AI எச்சரிக்கைகள்.{% else %}Smart bill reminders, commitments tracking, chronological calendar, and AI-prioritized notifications.{% endif %}
+      </p>
+    </div>
+    
+    <!-- Action controls -->
+    <div style="display: flex; gap: 12px;">
+      <button type="button" class="btn btn-ghost" onclick="toggleDrawer(true)" style="position: relative; display: flex; align-items: center; gap: 8px;">
+        <span>🔔</span> {% if lang=='ta' %}அறிவிப்புகள்{% else %}Notifications{% endif %}
+        {% if notifications %}
+        <span style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+          {{ notifications|length }}
+        </span>
+        {% endif %}
+      </button>
+      <button type="button" class="btn btn-primary" onclick="openBillModal()" style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); border: none;">
+        + {% if lang=='ta' %}புதிய கட்டணம்{% else %}Add Bill{% endif %}
+      </button>
+    </div>
+  </div>
+
+  <!-- Primary Dashboard Row -->
+  <div class="center-grid">
+    
+    <!-- Left: Calendar view -->
+    <div class="glass-panel" style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="calendar-header">
+        <h3 style="font-size: 18px; color: #fff; margin: 0; font-weight: 600;" id="calendar-title-text">
+          📆 {% if lang=='ta' %}நிதி நாள்காட்டி{% else %}Financial Calendar{% endif %}
+        </h3>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)" style="padding: 4px 10px;">←</button>
+          <span id="calendar-month-year" style="color: #fff; font-weight: 600; font-size: 14px; min-width: 110px; text-align: center;"></span>
+          <button class="btn btn-ghost btn-sm" onclick="changeMonth(1)" style="padding: 4px 10px;">→</button>
+        </div>
+      </div>
+      
+      <!-- Calendar Grid Container -->
+      <div>
+        <div class="calendar-grid" id="calendar-days-labels">
+          <div class="calendar-day-label">Sun</div>
+          <div class="calendar-day-label">Mon</div>
+          <div class="calendar-day-label">Tue</div>
+          <div class="calendar-day-label">Wed</div>
+          <div class="calendar-day-label">Thu</div>
+          <div class="calendar-day-label">Fri</div>
+          <div class="calendar-day-label">Sat</div>
+        </div>
+        <div class="calendar-grid" id="calendar-grid-cells">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+      
+      <!-- Day Events detail popover -->
+      <div id="day-events-panel" style="display: none; background: rgba(15, 23, 42, 0.4); border-radius: 12px; padding: 14px; border: 1px solid rgba(255,255,255,0.06);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h4 id="panel-date-title" style="font-size: 13.5px; color: #f472b6; margin: 0; font-weight: bold;">Selected Date Projections</h4>
+          <button style="background: none; border: none; color: #8f9cae; cursor: pointer; font-size: 16px;" onclick="closeEventsPanel()">✕</button>
+        </div>
+        <div id="panel-events-list" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Day specific items -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right: Prioritized reminders and AI recommendations -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      
+      <!-- Timeline commitments list -->
+      <div class="glass-panel">
+        <h3 style="font-size: 17px; color: #fff; margin: 0 0 16px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+          <span>📋 {% if lang=='ta' %}வரவிருக்கும் தவணைகள்{% else %}Upcoming Payments Timeline{% endif %}</span>
+          <span style="font-size: 11px; background: rgba(236,72,153,0.15); color: #f472b6; padding: 2px 8px; border-radius: 20px;">
+            {{ bills|rejectattr('is_paid')|list|length }} Pending
+          </span>
+        </h3>
+        
+        <div class="timeline-list">
+          {% set pending_bills = bills|rejectattr('is_paid')|list %}
+          {% if pending_bills %}
+            {% for b in pending_bills %}
+              <div class="timeline-item">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                  <span style="font-size: 24px; flex-shrink: 0;">{{ category_icons.get(b.category, '🔔') }}</span>
+                  <div style="min-width: 0;">
+                    <div style="font-size: 13.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.name }}</div>
+                    <div style="font-size: 11.5px; color: #8f9cae; margin-top: 3px; display: flex; align-items: center; gap: 6px;">
+                      <span class="badge {% if b.priority=='Critical' %}p-critical{% elif b.priority=='High' %}p-high{% elif b.priority=='Medium' %}p-medium{% else %}p-low{% endif %}" style="font-size: 9px; padding: 1px 6px;">{{ b.priority }}</span>
+                      <span>Due Day: {{ b.due_day }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                  <div style="font-family: var(--font-mono); color: #fff; font-weight: bold; font-size: 14.5px;">₹{{ "{:,.2f}".format(b.amount) }}</div>
+                  <button type="button" class="btn btn-sm btn-ghost" onclick="payBill({{ b.id }})" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; background: rgba(16, 185, 129, 0.05);">
+                    Pay
+                  </button>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div style="text-align: center; padding: 40px 10px; color: #8f9cae;">
+              <div style="font-size: 32px; margin-bottom: 8px;">🎉</div>
+              <p style="font-size: 13px; margin: 0;">All clear! You have no unpaid bills currently.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- AI recommendations engine -->
+      <div class="glass-panel">
+        <h3 style="font-size: 17px; color: #fff; margin: 0 0 14px; font-weight: 600;">
+          🤖 {% if lang=='ta' %}AI முன்னுரிமை பரிந்துரை{% else %}AI Prioritized Advisor{% endif %}
+        </h3>
+        
+        <div style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.15); border-radius: 12px; padding: 16px; min-height: 100px;">
+          <h4 style="font-size: 13px; color: #f472b6; margin: 0 0 8px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+            <span>✦</span> {% if lang=='ta' %}AI பரிந்துரைகள்{% else %}Payment Order Optimization{% endif %}
+          </h4>
+          <p style="font-size: 13px; color: #e2e8f0; margin: 0; line-height: 1.5;" id="ai-advisor-text">
+            {% if pending_bills %}
+              Analyzing your bills... Based on late fee penalties and category severity, we advise prioritizing 
+              <strong>
+                {% for b in pending_bills if b.priority in ['Critical', 'High'] %}
+                  {{ b.name }}{% if not loop.last %}, {% endif %}
+                {% else %}
+                  {{ pending_bills[0].name }}
+                {% endfor %}
+              </strong>. Delayed payments on utilities or credit lines will negatively affect your Financial Health score and CIBIL ratings.
+            {% else %}
+              You have no pending bills. Your cash flow looks optimal and your portfolio is compounding in line with expectations. Excellent financial discipline!
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Bottom: Payment History log -->
+  <div class="glass-panel">
+    <h3 style="font-size: 18px; color: #fff; margin: 0 0 16px; font-weight: 600;">
+      📜 {% if lang=='ta' %}கடந்த கால கட்டணங்கள்{% else %}Payment Log History{% endif %}
+    </h3>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
+        <thead>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: #8f9cae; font-weight: 600;">
+            <th style="padding: 12px 10px;">Date Paid</th>
+            <th style="padding: 12px 10px;">Bill Name</th>
+            <th style="padding: 12px 10px; text-align: center;">Category</th>
+            <th style="padding: 12px 10px; text-align: center;">Payment Mode</th>
+            <th style="padding: 12px 10px; text-align: right;">Amount Paid</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if payment_history %}
+            {% for p in payment_history %}
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); color: #fff;">
+              <td style="padding: 12px 10px; color: #5f748d;">{{ p.paid_date.strftime('%d %b %Y') }}</td>
+              <td style="padding: 12px 10px; font-weight: 500;">{{ p.name }}</td>
+              <td style="padding: 12px 10px; text-align: center;">
+                <span class="badge badge-secondary" style="font-size: 11px;">{{ p.bill.category if p.bill else 'Bills' }}</span>
+              </td>
+              <td style="padding: 12px 10px; text-align: center; font-family: var(--font-mono); color: #8f9cae;">{{ p.payment_mode }}</td>
+              <td style="padding: 12px 10px; text-align: right; font-weight: bold; font-family: var(--font-mono); color: #10b981;">₹{{ "{:,.2f}".format(p.amount) }}</td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 30px; color: #5f748d;">No payments logged yet. Complete a payment to build your history log.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Floating Action Button -->
+<button class="fab" onclick="openBillModal()" title="Add new commitment">+</button>
+
+<!-- Notification Drawer Side Panel -->
+<div class="drawer-overlay" id="notif-drawer">
+  <div class="drawer-header">
+    <h3 style="font-size: 17px; color: #fff; margin: 0; font-weight: 700;">🔔 Notifications Panel</h3>
+    <button style="background: none; border: none; color: #fff; cursor: pointer; font-size: 18px;" onclick="toggleDrawer(false)">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-notifications-list">
+    {% if notifications %}
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+        <button class="btn btn-sm btn-ghost" onclick="markAllNotificationsAsRead()" style="font-size: 11.5px; padding: 4px 10px;">Mark All Read</button>
+      </div>
+      {% for n in notifications %}
+      <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; position: relative;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+          <h4 style="font-size: 13.5px; font-weight: 600; color: #fff; margin: 0;">{{ n.title }}</h4>
+          <span class="badge {% if n.priority=='Critical' %}p-critical{% elif n.priority=='High' %}p-high{% elif n.priority=='Medium' %}p-medium{% else %}p-low{% endif %}" style="font-size: 9px;">{{ n.priority }}</span>
+        </div>
+        <p style="font-size: 12px; color: #8f9cae; margin: 0; line-height: 1.45;">{{ n.message }}</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+          <span style="font-size: 10px; color: #5f748d;">{{ n.created_at.strftime('%d %b, %I:%M %p') }}</span>
+          <button style="background: none; border: none; color: #ec4899; cursor: pointer; font-size: 11.5px; padding: 0; font-weight: 500;" onclick="dismissNotification({{ n.id }})">Dismiss</button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align: center; padding: 60px 10px; color: #8f9cae;">
+        <div style="font-size: 40px; margin-bottom: 12px;">✅</div>
+        <p style="font-size: 13px; margin: 0;">No active alerts or recommendations!</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add Bill Form Modal -->
+<div class="modal-overlay" id="bill-modal">
+  <div class="modal-box">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="font-size: 18px; color: #fff; margin: 0; font-weight: 700;" id="modal-title">Create Financial Commitment</h3>
+      <button style="background: none; border: none; color: #8f9cae; cursor: pointer; font-size: 20px;" onclick="closeBillModal()">✕</button>
+    </div>
+    
+    <form id="bill-form" onsubmit="submitBillForm(event)">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <label style="font-size: 13px; color: #8f9cae; display: block; margin-bottom: 6px;">Commitment Name</label>
+          <input type="text" name="name" required placeholder="e.g. Electricity Bill, Home Loan EMI, Netflix" style="width:100%; padding:10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.08); color:#fff; outline:none;">
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="font-size: 13px; color: #8f9cae; display: block; margin-bottom: 6px;">Amount (₹)</label>
+            <input type="number" step="0.01" min="1" name="amount" required placeholder="0.00" style="width:100%; padding:10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.08); color:#fff; outline:none; font-family:var(--font-mono);">
+          </div>
+          
+          <div>
+            <label style="font-size: 13px; color: #8f9cae; display: block; margin-bottom: 6px;">Category</label>
+            <select name="category" style="width:100%; padding:10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.08); color:#fff; outline:none;">
+              <option value="Electricity">Electricity</option>
+              <option value="Water">Water</option>
+              <option value="Gas">Gas</option>
+              <option value="Internet">Internet</option>
+              <option value="Mobile Recharge">Mobile Recharge</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="House Rent">House Rent</option>
+              <option value="Home Loan">Home Loan EMI</option>
+              <option value="Car Loan">Car Loan EMI</option>
+              <option value="SIP">Mutual Fund SIP</option>
+              <option value="Insurance">Insurance Premium</option>
+              <option value="Netflix">Netflix</option>
+              <option value="Spotify">Spotify</option>
+              <option value="Amazon Prime">Amazon Prime</option>
+              <option value="ChatGPT Plus">ChatGPT Plus</option>
+              <option value="Gym Membership">Gym Membership</option>
+              <option value="Custom">Custom Bill</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="font-size: 13px; color: #8f9cae; display: block; margin-bottom: 6px;">Recurring Frequency</label>
+            <select name="frequency" style="width:100%; padding:10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.08); color:#fff; outline:none;">
+              <option value="Monthly">Monthly</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Quarterly">Quarterly</option>
+              <option value="Yearly">Yearly</option>
+              <option value="One-Time">One-Time</option>
+            </select>
+          </div>
+          
+          <div>
+            <label style="font-size: 13px; color: #8f9cae; display: block; margin-bottom: 6px;">Due Day of Month</label>
+            <input type="number" min="1" max="31" name="due_day" value="1" required style="width:100%; padding:10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.08); color:#fff; outline:none;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="font-size: 13px; color: #8f9cae; display: block; margin-bottom: 6px;">Priority Level</label>
+            <select name="priority" style="width:100%; padding:10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.08); color:#fff; outline:none;">
+              <option value="Critical">Critical (Late Fees)</option>
+              <option value="High">High (Utilities)</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low (Subscriptions)</option>
+            </select>
+          </div>
+          
+          <div>
+            <label style="font-size: 13px; color: #8f9cae; display: block; margin-bottom: 6px;">Payment Method</label>
+            <select name="payment_method" style="width:100%; padding:10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.08); color:#fff; outline:none;">
+              <option value="UPI">UPI</option>
+              <option value="NetBanking">Net Banking</option>
+              <option value="Card">Debit/Credit Card</option>
+              <option value="Cash">Cash</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 20px; align-items: center; padding: 4px 0;">
+          <label style="display: flex; align-items: center; gap: 8px; color: #fff; font-size: 13.5px; cursor: pointer;">
+            <input type="checkbox" name="auto_pay" style="accent-color: #ec4899;"> Enable Auto-Pay
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; color: #fff; font-size: 13.5px; cursor: pointer;">
+            <input type="checkbox" name="is_recurring" checked style="accent-color: #ec4899;"> Is Recurring
+          </label>
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #8f9cae; display: block; margin-bottom: 6px;">Optional Notes</label>
+          <textarea name="note" rows="2" placeholder="e.g. Account number, billing reference..." style="width:100%; padding:10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.08); color:#fff; outline:none; resize:none;"></textarea>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; margin-top: 10px; background:linear-gradient(135deg, #ec4899 0%, #db2777 100%); border:none; font-weight:700;">
+          Save Commitment
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let currentYear = {{ now.year }};
+  let currentMonth = {{ now.month }};
+  let activeEvents = [];
+
+  // Toggle drawer visibility
+  function toggleDrawer(open) {
+    const drawer = document.getElementById('notif-drawer');
+    if (open) drawer.classList.add('open');
+    else drawer.classList.remove('open');
+  }
+
+  // Modals management
+  function openBillModal() {
+    document.getElementById('bill-modal').classList.add('open');
+  }
+  function closeBillModal() {
+    document.getElementById('bill-modal').classList.remove('open');
+  }
+
+  // Mark all unread read
+  async function markAllNotificationsAsRead() {
+    try {
+      const res = await fetch('/api/notifications/read-all', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        window.location.reload();
+      }
+    } catch(e) { console.error("Read all failed", e); }
+  }
+
+  // Dismiss notification
+  async function dismissNotification(nid) {
+    try {
+      const res = await fetch(`/api/notifications/read/${nid}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        window.location.reload();
+      }
+    } catch(e) { console.error("Dismiss failed", e); }
+  }
+
+  // Mark bill paid
+  async function payBill(bid) {
+    const mode = prompt("Enter Payment Mode (UPI / Cash / Card / NetBanking):", "UPI");
+    if (!mode) return;
+    
+    const formData = new FormData();
+    formData.append('bill_id', bid);
+    formData.append('payment_mode', mode);
+
+    try {
+      const res = await fetch('/api/pay', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        alert("✅ " + data.message);
+        window.location.reload();
+      } else {
+        alert("❌ Failed to process payment: " + data.error);
+      }
+    } catch(e) { alert("❌ Network error: " + e.message); }
+  }
+
+  // Create bill form submit
+  async function submitBillForm(event) {
+    event.preventDefault();
+    const form = document.getElementById('bill-form');
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch('/api/bills', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        alert("✅ Commitment registered successfully!");
+        closeBillModal();
+        window.location.reload();
+      } else {
+        alert("❌ Error: " + data.error);
+      }
+    } catch(e) { alert("❌ Network error: " + e.message); }
+  }
+
+  // Financial Calendar Navigation
+  async function loadCalendarEvents() {
+    try {
+      const res = await fetch(`/api/calendar?year=${currentYear}&month=${currentMonth}`);
+      activeEvents = await res.json();
+      renderCalendar();
+    } catch(e) { console.error("Failed to load events", e); }
+  }
+
+  function renderCalendar() {
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    document.getElementById('calendar-month-year').innerText = `${monthNames[currentMonth-1]} ${currentYear}`;
+
+    const cellsContainer = document.getElementById('calendar-grid-cells');
+    cellsContainer.innerHTML = '';
+
+    const firstDayIndex = new Date(currentYear, currentMonth - 1, 1).getDay();
+    const numDays = new Date(currentYear, currentMonth, 0).getDate();
+    
+    const today = new Date();
+    const isThisMonth = (today.getFullYear() === currentYear && today.getMonth() === currentMonth - 1);
+
+    // Render preceding empty days
+    for (let i = 0; i < firstDayIndex; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('calendar-day', 'other-month');
+      cellsContainer.appendChild(cell);
+    }
+
+    // Render active days
+    for (let day = 1; day <= numDays; day++) {
+      const cell = document.createElement('div');
+      cell.classList.add('calendar-day');
+      if (isThisMonth && today.getDate() === day) {
+        cell.classList.add('today');
+      }
+
+      // Day Number label
+      const numLabel = document.createElement('span');
+      numLabel.classList.add('day-num');
+      numLabel.innerText = day;
+      cell.appendChild(numLabel);
+
+      // Map matching events for day
+      const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = activeEvents.filter(e => e.date === dateStr);
+
+      const dotsContainer = document.createElement('div');
+      dotsContainer.classList.add('day-dots');
+
+      dayEvents.forEach(e => {
+        const dot = document.createElement('span');
+        dot.classList.add('dot');
+        if (e.type === 'salary') dot.classList.add('dot-salary');
+        else if (e.is_paid) dot.classList.add('dot-paid');
+        else dot.classList.add('dot-bill');
+        dotsContainer.appendChild(dot);
+      });
+      cell.appendChild(dotsContainer);
+
+      // Click cell to show events
+      cell.onclick = () => showEventsForDay(dateStr, dayEvents);
+
+      cellsContainer.appendChild(cell);
+    }
+  }
+
+  function changeMonth(dir) {
+    currentMonth += dir;
+    if (currentMonth > 12) {
+      currentMonth = 1;
+      currentYear += 1;
+    } else if (currentMonth < 1) {
+      currentMonth = 12;
+      currentYear -= 1;
+    }
+    loadCalendarEvents();
+  }
+
+  function showEventsForDay(dateStr, events) {
+    const panel = document.getElementById('day-events-panel');
+    const list = document.getElementById('panel-events-list');
+    document.getElementById('panel-date-title').innerText = "Schedule for: " + dateStr;
+    
+    list.innerHTML = '';
+    if (events.length === 0) {
+      list.innerHTML = '<p style="font-size: 13px; color: #8f9cae; margin: 0;">No financial events scheduled for this day.</p>';
+    } else {
+      events.forEach(e => {
+        const div = document.createElement('div');
+        div.style.background = 'rgba(30, 41, 59, 0.8)';
+        div.style.padding = '10px 14px';
+        div.style.borderRadius = '8px';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'center';
+        div.style.border = '1px solid rgba(255,255,255,0.04)';
+
+        let statusText = e.is_paid ? 'Paid' : 'Unpaid';
+        let statusColor = e.is_paid ? '#10b981' : '#ef4444';
+        if (e.type === 'salary') {
+          statusText = 'Incoming';
+          statusColor = '#10b981';
+        }
+
+        div.innerHTML = `
+          <div>
+            <div style="font-size: 13px; font-weight:600; color:#fff;">${e.title}</div>
+            <div style="font-size: 11px; color:${statusColor}; margin-top:2px; font-weight:500;">${statusText} (${e.category})</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-family:var(--font-mono); font-weight:bold; color:#fff; font-size:13.5px;">₹${e.amount.toLocaleString('en-IN')}</div>
+            ${(!e.is_paid && e.type !== 'salary') ? `<button class="btn btn-sm btn-ghost" style="padding: 2px 6px; font-size: 10px; margin-top: 4px; color:#10b981; border: 1px solid rgba(16,185,129,0.3);" onclick="payBill(${e.id})">Pay</button>` : ''}
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+    panel.style.display = 'block';
+  }
+
+  function closeEventsPanel() {
+    document.getElementById('day-events-panel').style.display = 'none';
+  }
+
+  // Load calendar on start
+  window.addEventListener('DOMContentLoaded', () => {
+    loadCalendarEvents();
+  });
+</script>
+{% endblock %}

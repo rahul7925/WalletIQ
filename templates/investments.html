@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Investments — WalletIQ{% endblock %}
+{% block extra_style %}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}
+.icard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px;transition:border-color 0.2s,transform 0.2s}
+.icard:hover{border-color:var(--border2);transform:translateY(-1px)}
+.icard-type{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:600;background:var(--gold-dim);color:var(--gold);margin-bottom:10px}
+.icard-name{font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px}
+.icard-nums{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.icard-num-label{font-size:10.5px;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);margin-bottom:4px}
+.icard-num-val{font-family:var(--font-mono);font-size:15px;font-weight:500}
+.gain-pos{color:var(--green)}.gain-neg{color:var(--red)}
+.icard-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:767px){
+  .inv-grid{grid-template-columns:1fr}
+  .icard-actions .btn,.icard-actions form .btn{flex:1;min-width:120px;justify-content:center}
+}
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-eyebrow">Portfolio</div>
+    <div class="page-title">{% if lang=="ta" %}முதலீட்டு கண்காணிப்பு{% else %}Investments{% endif %}</div>
+    <div class="page-subtitle">{% if lang=="ta" %}உங்கள் போர்ட்ஃபோலியோ{% else %}Track all your investments in one place{% endif %}</div>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="openModal('add-inv-modal')">+ Add investment</button>
+  </div>
+</div>
+<div class="stat-grid">
+  <div class="stat-card gold-card"><div class="stat-label">Invested</div><div class="stat-value gold">&#8377;{{ "{:,.0f}".format(total_invested) }}</div></div>
+  <div class="stat-card blue-card"><div class="stat-label">Current Value</div><div class="stat-value blue">&#8377;{{ "{:,.0f}".format(total_current) }}</div></div>
+  <div class="stat-card {{ "green-card" if gain >= 0 else "red-card" }}"><div class="stat-label">Total Gain/Loss</div><div class="stat-value {{ "green" if gain >= 0 else "red" }}">{{ "+" if gain >= 0 else "" }}&#8377;{{ "{:,.0f}".format(gain) }}</div></div>
+  <div class="stat-card {{ "green-card" if gain_pct >= 0 else "red-card" }}"><div class="stat-label">Returns</div><div class="stat-value {{ "green" if gain_pct >= 0 else "red" }}">{{ "+" if gain_pct >= 0 else "" }}{{ gain_pct }}%</div></div>
+</div>
+{% if investments %}
+<div class="inv-grid">
+{% for inv in investments %}{% set g = inv.current_value - inv.invested %}{% set gp = ((g/inv.invested)*100)|round(2) if inv.invested > 0 else 0 %}
+<div class="icard">
+  <div class="icard-type">{{ inv.type }}</div>
+  <div class="icard-name">{{ inv.name }}</div>
+  <div class="icard-nums">
+    <div><div class="icard-num-label">Invested</div><div class="icard-num-val">&#8377;{{ "{:,.0f}".format(inv.invested) }}</div></div>
+    <div><div class="icard-num-label">Current</div><div class="icard-num-val">&#8377;{{ "{:,.0f}".format(inv.current_value) }}</div></div>
+    <div><div class="icard-num-label">Gain / Loss</div><div class="icard-num-val {{ "gain-pos" if g>=0 else "gain-neg" }}">{{ "+" if g>=0 else "" }}&#8377;{{ "{:,.0f}".format(g) }}</div></div>
+    <div><div class="icard-num-label">Returns</div><div class="icard-num-val {{ "gain-pos" if gp>=0 else "gain-neg" }}">{{ "+" if gp>=0 else "" }}{{ gp }}%</div></div>
+  </div>
+  {% if inv.note %}<p style="font-size:12.5px;color:var(--text3);margin-bottom:12px">{{ inv.note }}</p>{% endif %}
+  {% if inv.maturity_date %}<p style="font-size:12px;color:var(--text3);margin-bottom:12px">Matures {{ inv.maturity_date.strftime("%d %b %Y") }}</p>{% endif %}
+  <div class="icard-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openUpdateModal({{ inv.id }},{{ inv.current_value }})">Update value</button>
+    <form action="/investments/delete/{{ inv.id }}" method="POST" onsubmit="return confirm('Remove this investment?')"><button class="btn btn-danger btn-sm">Remove</button></form>
+  </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:60px 20px">
+  <div style="font-size:40px;margin-bottom:14px;opacity:0.3">📈</div>
+  <div style="font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text)">No investments tracked</div>
+  <p style="color:var(--text3);font-size:13.5px;margin-bottom:20px">Add your SIPs, FDs, stocks, gold and watch your portfolio grow.</p>
+  <button class="btn btn-primary" onclick="openModal('add-inv-modal')">Track first investment</button>
+</div>
+{% endif %}
+<div class="modal-overlay" id="add-inv-modal" onclick="if(event.target===this)closeModal('add-inv-modal')">
+  <div class="modal">
+    <div class="modal-title">Add investment <span class="modal-close" onclick="closeModal('add-inv-modal')">&#x2715;</span></div>
+    <form action="/investments/add" method="POST">
+      <div class="form-grid" style="gap:14px">
+        <div class="form-group"><label class="form-label">Name</label><input class="form-control" type="text" name="name" placeholder="e.g. HDFC Nifty 50 Index Fund" required></div>
+        <div class="form-group"><label class="form-label">Type</label><select class="form-control" name="type" required><option value="SIP">SIP / Mutual Fund</option><option value="FD">Fixed Deposit</option><option value="PPF">PPF</option><option value="NPS">NPS</option><option value="Stocks">Stocks</option><option value="Gold">Gold</option><option value="RD">Recurring Deposit</option><option value="Real Estate">Real Estate</option><option value="Other">Other</option></select></div>
+        <div class="form-grid form-2col" style="gap:14px">
+          <div class="form-group"><label class="form-label">Amount Invested &#8377;</label><input class="form-control" type="number" name="invested" min="1" step="0.01" placeholder="0.00" required style="font-family:var(--font-mono)"></div>
+          <div class="form-group"><label class="form-label">Current Value &#8377;</label><input class="form-control" type="number" name="current_value" min="0" step="0.01" placeholder="0.00" required style="font-family:var(--font-mono)"></div>
+        </div>
+        <div class="form-grid form-2col" style="gap:14px">
+          <div class="form-group"><label class="form-label">Start Date</label><input class="form-control" type="date" name="start_date"></div>
+          <div class="form-group"><label class="form-label">Maturity Date</label><input class="form-control" type="date" name="maturity_date"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Note</label><input class="form-control" type="text" name="note" placeholder="Optional note"></div>
+        <button type="submit" class="btn btn-primary btn-lg" style="justify-content:center">Save investment</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="update-inv-modal" onclick="if(event.target===this)closeModal('update-inv-modal')">
+  <div class="modal">
+    <div class="modal-title">Update current value <span class="modal-close" onclick="closeModal('update-inv-modal')">&#x2715;</span></div>
+    <form action="" method="POST" id="update-inv-form">
+      <div class="form-grid" style="gap:14px">
+        <div class="form-group"><label class="form-label">New current value &#8377;</label><input class="form-control" type="number" name="current_value" id="update-val" min="0" step="0.01" required style="font-family:var(--font-mono)"></div>
+        <button type="submit" class="btn btn-primary btn-lg" style="justify-content:center">Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function openUpdateModal(id,val){document.getElementById("update-inv-form").action="/investments/update/"+id;document.getElementById("update-val").value=val;openModal('update-inv-modal')}
+</script>
+{% endblock %}

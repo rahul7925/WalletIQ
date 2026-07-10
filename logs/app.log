@@ -1,0 +1,14 @@
+2026-07-10 10:07:30,166 [INFO] Password reset success for user: recover_user
+2026-07-10 10:07:31,034 [INFO] Login: login_user lang=en
+2026-07-10 10:07:31,039 [INFO] Logout: login_user
+2026-07-10 10:07:31,180 [INFO] Login: login_user lang=en
+2026-07-10 10:07:31,182 [INFO] Logout: login_user
+2026-07-10 10:07:31,315 [WARNING] Failed login attempt: login_user from 127.0.0.1
+2026-07-10 10:07:32,203 [INFO] New user registered: user1
+2026-07-10 10:07:33,145 [INFO] New user registered: rahul_fintech
+2026-07-10 10:07:33,462 [WARNING] Model gemini-2.5-flash-lite failed for session test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:07:33,462 [INFO] Session cleared: test_session_1_en
+2026-07-10 10:07:33,462 [ERROR] All Gemini models failed session=test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:07:33,505 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 10:07:33,519 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 10:07:33,572 [INFO] Session cleared: nonexistent_session_en

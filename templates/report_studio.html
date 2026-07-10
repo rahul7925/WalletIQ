@@ -1,0 +1,724 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if lang=='ta' %}அறிக்கை அரங்கம்{% else %}Smart Financial Report Studio{% endif %} – WalletIQ
+{% endblock %}
+
+{% block extra_style %}
+/* ── Report Studio Premium Styles ─────────────────────────────────────────── */
+.studio-wrap {
+  padding: 24px;
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+/* ── Stats Banner ─── */
+.studio-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 26px;
+}
+@media (max-width: 800px) { .studio-stats-bar { grid-template-columns: repeat(2, 1fr); } }
+.stat-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 18px 20px;
+  backdrop-filter: blur(10px);
+  transition: transform .2s, border-color .2s;
+}
+.stat-card:hover { transform: translateY(-2px); border-color: rgba(236,72,153,.3); }
+.stat-card .sc-icon { font-size: 24px; margin-bottom: 8px; }
+.stat-card .sc-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: rgba(148,163,184,.8); margin-bottom: 4px; }
+.stat-card .sc-val { font-size: 22px; font-weight: 800; color: #f1f5f9; }
+.stat-card .sc-sub { font-size: 11px; color: #64748b; margin-top: 3px; }
+
+/* ── Primary Grid (left + right) ─── */
+.studio-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+@media (max-width: 1100px) { .studio-layout { grid-template-columns: 1fr; } }
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.45);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  padding: 24px;
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Config form ─── */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+.form-control {
+  width: 100%;
+  background: rgba(15,23,42,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #f1f5f9;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  transition: border-color .2s;
+}
+.form-control:focus { outline: none; border-color: #ec4899; }
+.form-control option { background: #1e293b; }
+
+/* ── Format cards ─── */
+.format-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 18px; }
+.format-card {
+  background: rgba(15,23,42,0.4);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.format-card:hover { border-color: rgba(236,72,153,.4); }
+.format-card.active { border-color: #ec4899; background: rgba(236,72,153,.1); box-shadow: 0 0 14px rgba(236,72,153,.12); }
+.format-icon { font-size: 24px; margin-bottom: 4px; }
+.format-label { font-size: 11px; font-weight: 600; color: #cbd5e1; }
+
+/* ── Generate button ─── */
+.btn-generate {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-generate:hover { opacity: .9; }
+.btn-generate:active { transform: scale(.98); }
+.btn-generate:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Summary preview ─── */
+.preview-kpi-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 18px; }
+.preview-kpi { background: rgba(15,23,42,0.4); border-radius: 10px; padding: 14px 12px; text-align: center; }
+.preview-kpi .pk-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #64748b; margin-bottom: 4px; }
+.preview-kpi .pk-val { font-size: 17px; font-weight: 800; }
+.ai-commentary-box {
+  background: rgba(37,99,235,0.08);
+  border: 1px solid rgba(37,99,235,0.2);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #bfdbfe;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+/* ── Search / filter bar ─── */
+.search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.search-input {
+  flex: 1;
+  min-width: 180px;
+  background: rgba(15,23,42,0.5);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 8px;
+  color: #f1f5f9;
+  padding: 9px 14px;
+  font-size: 13px;
+}
+.search-input:focus { outline: none; border-color: #ec4899; }
+.filter-select {
+  background: rgba(15,23,42,0.5);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 8px;
+  color: #f1f5f9;
+  padding: 9px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.filter-select option { background: #1e293b; }
+.btn-icon-sm {
+  padding: 9px 14px;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 8px;
+  background: rgba(15,23,42,0.4);
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.btn-icon-sm:hover { border-color: #ec4899; color: #ec4899; }
+.btn-icon-sm.active { background: rgba(236,72,153,.12); border-color: #ec4899; color: #ec4899; }
+
+/* ── Report cards list ─── */
+.report-list { display: flex; flex-direction: column; gap: 12px; }
+.report-card {
+  background: rgba(15,23,42,0.5);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: border-color .2s, transform .2s;
+}
+.report-card:hover { border-color: rgba(236,72,153,.35); transform: translateX(2px); }
+.report-card.favorite { border-color: rgba(234,179,8,.4); }
+.rc-icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+.rc-body { flex: 1; min-width: 0; }
+.rc-name { font-size: 13.5px; font-weight: 700; color: #f1f5f9; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-meta { font-size: 11px; color: #64748b; display: flex; gap: 12px; flex-wrap: wrap; }
+.rc-meta span { display: flex; align-items: center; gap: 4px; }
+.version-badge { display: inline-block; background: rgba(139,92,246,.18); color: #a78bfa; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700; margin-left: 4px; }
+.rc-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+.rc-btn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  font-size: 15px;
+  color: #94a3b8;
+  transition: all .2s;
+  text-decoration: none;
+}
+.rc-btn:hover { border-color: #ec4899; color: #ec4899; background: rgba(236,72,153,.08); }
+.rc-btn.fav-on { color: #fbbf24; border-color: rgba(251,191,36,.4); }
+.rc-btn.share-on { color: #34d399; border-color: rgba(52,211,153,.4); }
+
+/* ── AI Comparison Panel ─── */
+.compare-panel { background: rgba(30,41,59,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; backdrop-filter: blur(12px); }
+.compare-selects { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin-bottom: 18px; }
+.compare-vs { font-size: 18px; font-weight: 800; color: #64748b; text-align: center; }
+.btn-compare { width: 100%; padding: 12px; background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; border-radius: 10px; color: #fff; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: opacity .2s; }
+.btn-compare:hover { opacity: .88; }
+.compare-result {
+  display: none;
+  margin-top: 18px;
+  background: rgba(15,23,42,0.5);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 18px;
+}
+.compare-result.show { display: block; }
+.compare-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 14px; }
+@media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+.compare-kpi { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 12px; text-align: center; }
+.compare-kpi .ck-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing:.4px; margin-bottom: 4px; }
+.compare-kpi .ck-a { font-size: 12px; color: #94a3b8; }
+.compare-kpi .ck-b { font-size: 14px; font-weight: 700; color: #f1f5f9; }
+.compare-kpi .ck-diff { font-size: 11px; font-weight: 600; margin-top: 3px; }
+.diff-up { color: #34d399; } .diff-dn { color: #f87171; }
+.compare-narrative { font-size: 12.5px; line-height: 1.7; color: #cbd5e1; white-space: pre-wrap; }
+
+/* ── Generation result toast-like panel ─── */
+.gen-result { display: none; margin-top: 16px; padding: 14px 16px; border-radius: 10px; font-size: 13px; }
+.gen-result.show { display: block; }
+.gen-result.success { background: rgba(22,163,74,.1); border: 1px solid rgba(22,163,74,.25); color: #4ade80; }
+.gen-result.error   { background: rgba(220,38,38,.1); border: 1px solid rgba(220,38,38,.25); color: #f87171; }
+
+/* ── Share modal ─── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal-box { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; max-width: 480px; width: 95%; }
+.modal-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin-bottom: 12px; }
+.share-url-row { display: flex; gap: 8px; margin-top: 12px; }
+.share-url-input { flex: 1; background: rgba(15,23,42,.7); border: 1px solid rgba(255,255,255,.1); border-radius: 8px; color: #94a3b8; padding: 10px 12px; font-size: 12px; word-break: break-all; }
+.btn-copy { padding: 10px 14px; background: #2563eb; border: none; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn-revoke { margin-top: 10px; padding: 8px 12px; background: rgba(220,38,38,.12); border: 1px solid rgba(220,38,38,.25); border-radius: 8px; color: #f87171; font-size: 12px; cursor: pointer; }
+.btn-modal-close { float: right; background: none; border: none; color: #64748b; font-size: 18px; cursor: pointer; }
+{% endblock %}
+
+{% block content %}
+<div class="studio-wrap">
+
+  <!-- Page Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1 style="font-size:22px;font-weight:800;color:#f1f5f9;margin-bottom:4px;">
+        📊 Smart Financial Report Studio
+      </h1>
+      <p style="font-size:13px;color:#64748b;">Generate, manage, compare and share professional financial reports</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="/report-studio?filter=Favorites" class="btn-icon-sm {% if ftype=='Favorites' %}active{% endif %}" title="Favourites">⭐ Favourites</a>
+    </div>
+  </div>
+
+  <!-- ── Stats Bar ── -->
+  <div class="studio-stats-bar">
+    <div class="stat-card">
+      <div class="sc-icon">📄</div>
+      <div class="sc-label">Reports Generated</div>
+      <div class="sc-val">{{ stats.total_generated }}</div>
+      <div class="sc-sub">All time</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon">📥</div>
+      <div class="sc-label">Total Downloads</div>
+      <div class="sc-val">{{ stats.total_downloaded }}</div>
+      <div class="sc-sub">Across all reports</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon">💾</div>
+      <div class="sc-label">Storage Used</div>
+      <div class="sc-val">{{ stats.storage_mb }} MB</div>
+      <div class="sc-sub">{{ "{:,.0f}".format(stats.storage_bytes / 1024) }} KB</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon">🕐</div>
+      <div class="sc-label">Last Generated</div>
+      <div class="sc-val" style="font-size:15px;">{{ stats.last_generated }}</div>
+      <div class="sc-sub">IST</div>
+    </div>
+  </div>
+
+  <!-- ── Primary Layout ── -->
+  <div class="studio-layout">
+
+    <!-- LEFT — Generator + Preview -->
+    <div>
+      <!-- Config Card -->
+      <div class="glass-card" style="margin-bottom:20px;">
+        <div class="card-title">⚙️ Configure Report</div>
+        <form id="reportForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Report Type</label>
+              <select class="form-control" name="report_type" id="reportType">
+                <option value="Monthly">📅 Monthly</option>
+                <option value="Yearly">📆 Yearly</option>
+                <option value="Budget">🎯 Budget Analysis</option>
+                <option value="Investment">📈 Investment Report</option>
+                <option value="Loan">🏦 Loan &amp; Credit</option>
+                <option value="Health">❤️ Financial Health</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Month</label>
+              <select class="form-control" name="month" id="monthSel">
+                {% for m in range(1,13) %}
+                  <option value="{{ m }}" {% if m == now.month %}selected{% endif %}>
+                    {{ ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1] }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:18px;">
+            <div class="form-group">
+              <label>Year</label>
+              <select class="form-control" name="year" id="yearSel">
+                {% for y in range(now.year - 3, now.year + 2) %}
+                  <option value="{{ y }}" {% if y == now.year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Export Format</label>
+              <div class="format-grid">
+                <div class="format-card active" data-format="PDF">
+                  <div class="format-icon">📄</div>
+                  <div class="format-label">PDF</div>
+                </div>
+                <div class="format-card" data-format="Excel">
+                  <div class="format-icon">📊</div>
+                  <div class="format-label">Excel</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" name="format" id="fmtInput" value="PDF">
+          <button type="button" class="btn-generate" id="generateBtn" onclick="generateReport()">
+            <span id="genBtnIcon">✨</span> <span id="genBtnText">Generate Report</span>
+          </button>
+          <div class="gen-result" id="genResult"></div>
+        </form>
+      </div>
+
+      <!-- Data Preview Card -->
+      <div class="glass-card">
+        <div class="card-title">📊 Live Financial Snapshot</div>
+        <div class="preview-kpi-row">
+          <div class="preview-kpi">
+            <div class="pk-label">Income</div>
+            <div class="pk-val" style="color:#34d399;">₹{{ "{:,.0f}".format(preview.income) }}</div>
+          </div>
+          <div class="preview-kpi">
+            <div class="pk-label">Expenses</div>
+            <div class="pk-val" style="color:#f87171;">₹{{ "{:,.0f}".format(preview.expenses_total) }}</div>
+          </div>
+          <div class="preview-kpi">
+            <div class="pk-label">Savings</div>
+            <div class="pk-val" style="color:#60a5fa;">₹{{ "{:,.0f}".format(preview.savings) }}</div>
+          </div>
+        </div>
+        <div class="preview-kpi-row" style="margin-bottom:14px;">
+          <div class="preview-kpi">
+            <div class="pk-label">Health Score</div>
+            <div class="pk-val" style="color:#a78bfa;">{{ preview.health_score }}/100</div>
+          </div>
+          <div class="preview-kpi">
+            <div class="pk-label">Portfolio</div>
+            <div class="pk-val" style="color:#fbbf24;">₹{{ "{:,.0f}".format(preview.portfolio_value) }}</div>
+          </div>
+          <div class="preview-kpi">
+            <div class="pk-label">Status</div>
+            <div class="pk-val" style="font-size:13px;color:#34d399;">{{ preview.health_status }}</div>
+          </div>
+        </div>
+        <div class="ai-commentary-box">{{ preview.ai_commentary }}</div>
+      </div>
+    </div>
+
+    <!-- RIGHT — History + Compare -->
+    <div>
+      <!-- Search/Filter Bar -->
+      <form method="get" action="/report-studio" class="search-bar">
+        <input type="text" class="search-input" name="search" placeholder="🔍 Search reports…" value="{{ search }}">
+        <select class="filter-select" name="filter">
+          <option value="">All Types</option>
+          <option value="Monthly" {% if ftype=='Monthly' %}selected{% endif %}>Monthly</option>
+          <option value="Yearly"  {% if ftype=='Yearly'  %}selected{% endif %}>Yearly</option>
+          <option value="Budget"  {% if ftype=='Budget'  %}selected{% endif %}>Budget</option>
+          <option value="Investment" {% if ftype=='Investment' %}selected{% endif %}>Investment</option>
+          <option value="Loan"    {% if ftype=='Loan'    %}selected{% endif %}>Loan</option>
+          <option value="Health"  {% if ftype=='Health'  %}selected{% endif %}>Health</option>
+          <option value="PDF"     {% if ftype=='PDF'     %}selected{% endif %}>PDF only</option>
+          <option value="Excel"   {% if ftype=='Excel'   %}selected{% endif %}>Excel only</option>
+        </select>
+        <button type="submit" class="btn-icon-sm">Filter</button>
+      </form>
+
+      <!-- Report History -->
+      <div class="glass-card" style="margin-bottom:20px;">
+        <div class="card-title" style="justify-content:space-between;">
+          <span>📋 Report History</span>
+          <span style="font-size:11px;color:#64748b;font-weight:400;">{{ reports|length }} report{{ 's' if reports|length != 1 }}</span>
+        </div>
+        <div class="report-list" id="reportList">
+          {% if not reports %}
+          <div style="text-align:center;padding:32px 0;color:#475569;">
+            <div style="font-size:32px;margin-bottom:8px;">📭</div>
+            <div style="font-size:13px;">No reports yet. Generate your first one!</div>
+          </div>
+          {% endif %}
+          {% for r in reports %}
+          <div class="report-card {% if r.is_favorite %}favorite{% endif %}" id="rc-{{ r.id }}" data-rid="{{ r.id }}">
+            <div class="rc-icon">{% if 'xlsx' in r.file_name or 'Excel' in r.report_type %}📊{% else %}📄{% endif %}</div>
+            <div class="rc-body">
+              <div class="rc-name" title="{{ r.report_name }}">
+                {{ r.report_name }}
+                {% if r.version and r.version > 1 %}<span class="version-badge">v{{ r.version }}</span>{% endif %}
+              </div>
+              <div class="rc-meta">
+                <span>🗓 {{ r.generated_date.strftime('%d %b %Y') }}</span>
+                <span>📥 {{ r.download_count }}x</span>
+                <span>{% if r.file_size %}💾 {{ "%.1f"|format(r.file_size / 1024) }} KB{% else %}—{% endif %}</span>
+                {% if r.share_key %}<span style="color:#34d399;">🔗 Shared</span>{% endif %}
+              </div>
+            </div>
+            <div class="rc-actions">
+              <!-- Favourite -->
+              <button class="rc-btn {% if r.is_favorite %}fav-on{% endif %}" title="Toggle favourite"
+                      onclick="toggleFavorite({{ r.id }}, this)">⭐</button>
+              <!-- Share -->
+              <button class="rc-btn {% if r.share_key %}share-on{% endif %}" title="Share link"
+                      onclick="openShareModal({{ r.id }}, '{{ r.share_key or '' }}')">🔗</button>
+              <!-- Download -->
+              <a class="rc-btn" href="/api/reports/download/{{ r.id }}" title="Download" download>⬇️</a>
+              <!-- Delete -->
+              <button class="rc-btn" title="Delete" onclick="deleteReport({{ r.id }})">🗑️</button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- AI Comparison Panel -->
+      <div class="compare-panel">
+        <div class="card-title">🔍 AI Report Comparison</div>
+        <p style="font-size:12px;color:#64748b;margin-bottom:14px;">Select two reports to get an AI-powered side-by-side analysis</p>
+        <div class="compare-selects">
+          <div>
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">Report A</label>
+            <select class="form-control" id="compareA">
+              <option value="">— Select Report —</option>
+              {% for r in all_reports %}
+              <option value="{{ r.id }}">{{ r.report_name[:38] }}{% if r.report_name|length > 38 %}…{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="compare-vs">VS</div>
+          <div>
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">Report B</label>
+            <select class="form-control" id="compareB">
+              <option value="">— Select Report —</option>
+              {% for r in all_reports %}
+              <option value="{{ r.id }}">{{ r.report_name[:38] }}{% if r.report_name|length > 38 %}…{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <button class="btn-compare" onclick="runComparison()">⚡ Run AI Comparison</button>
+
+        <div class="compare-result" id="compareResult">
+          <div class="compare-grid" id="compareKpis"></div>
+          <div class="compare-narrative" id="compareNarrative"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Share Modal ── -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal-box">
+    <button class="btn-modal-close" onclick="closeShareModal()">✕</button>
+    <div class="modal-title">🔗 Share Report</div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:6px;" id="shareModalDesc">Anyone with this link can view the report summary.</p>
+    <div class="share-url-row" id="shareUrlRow" style="display:none;">
+      <input type="text" class="share-url-input" id="shareUrlInput" readonly>
+      <button class="btn-copy" onclick="copyShareUrl()">Copy</button>
+    </div>
+    <div id="shareActions" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn-generate" style="padding:10px 16px;width:auto;font-size:13px;" id="shareGenBtn" onclick="generateShareLink()">✨ Generate Link</button>
+      <button class="btn-revoke" id="revokeBtn" style="display:none;" onclick="revokeShareLink()">🗑 Revoke Link</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let selectedFormat = 'PDF';
+let shareTargetId  = null;
+
+// ── Format cards ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.format-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.format-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    selectedFormat = card.dataset.format;
+    document.getElementById('fmtInput').value = selectedFormat;
+  });
+});
+
+// ── Generate Report ────────────────────────────────────────────────────────────
+async function generateReport() {
+  const btn  = document.getElementById('generateBtn');
+  const icon = document.getElementById('genBtnIcon');
+  const text = document.getElementById('genBtnText');
+  const res  = document.getElementById('genResult');
+
+  btn.disabled = true;
+  icon.textContent = '⏳';
+  text.textContent = 'Generating…';
+  res.className = 'gen-result';
+
+  const fd = new FormData();
+  fd.append('report_type', document.getElementById('reportType').value);
+  fd.append('year',        document.getElementById('yearSel').value);
+  fd.append('month',       document.getElementById('monthSel').value);
+  fd.append('format',      selectedFormat);
+
+  try {
+    const r = await fetch('/api/reports/generate', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.success) {
+      res.className = 'gen-result show success';
+      res.innerHTML = `✅ <strong>${d.report_name}</strong> generated! (${d.file_size_kb} KB, v${d.version})<br><small>${d.ai_commentary ? d.ai_commentary.substring(0, 180) + '…' : ''}</small>`;
+      setTimeout(() => location.reload(), 2200);
+    } else {
+      res.className = 'gen-result show error';
+      res.textContent = '❌ ' + (d.error || 'Generation failed');
+    }
+  } catch (e) {
+    res.className = 'gen-result show error';
+    res.textContent = '❌ Network error. Please retry.';
+  }
+
+  btn.disabled = false;
+  icon.textContent = '✨';
+  text.textContent = 'Generate Report';
+}
+
+// ── Toggle Favourite ───────────────────────────────────────────────────────────
+async function toggleFavorite(rid, btn) {
+  const fd = new FormData(); fd.append('report_id', rid);
+  const r = await fetch('/api/reports/favorite', { method: 'POST', body: fd });
+  const d = await r.json();
+  if (d.success) {
+    btn.classList.toggle('fav-on', d.is_favorite);
+    const card = document.getElementById('rc-' + rid);
+    card.classList.toggle('favorite', d.is_favorite);
+  }
+}
+
+// ── Delete Report ──────────────────────────────────────────────────────────────
+async function deleteReport(rid) {
+  if (!confirm('Delete this report? This cannot be undone.')) return;
+  const r = await fetch('/api/reports/' + rid, { method: 'DELETE' });
+  const d = await r.json();
+  if (d.success) {
+    const card = document.getElementById('rc-' + rid);
+    card.style.opacity = '0';
+    card.style.transform = 'translateX(-16px)';
+    card.style.transition = 'all .3s';
+    setTimeout(() => card.remove(), 300);
+  }
+}
+
+// ── Share Modal ────────────────────────────────────────────────────────────────
+function openShareModal(rid, existingKey) {
+  shareTargetId = rid;
+  const modal   = document.getElementById('shareModal');
+  const urlRow  = document.getElementById('shareUrlRow');
+  const revokeB = document.getElementById('revokeBtn');
+  const genBtn  = document.getElementById('shareGenBtn');
+
+  if (existingKey) {
+    const url = window.location.origin + '/shared/report/' + existingKey;
+    document.getElementById('shareUrlInput').value = url;
+    urlRow.style.display  = 'flex';
+    revokeB.style.display = 'inline-block';
+    genBtn.style.display  = 'none';
+    document.getElementById('shareModalDesc').textContent = 'This report is currently shared via the link below.';
+  } else {
+    urlRow.style.display  = 'none';
+    revokeB.style.display = 'none';
+    genBtn.style.display  = 'inline-flex';
+    document.getElementById('shareModalDesc').textContent = 'Generate a secure public link to share this report.';
+  }
+  modal.classList.add('show');
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('show');
+  shareTargetId = null;
+}
+
+async function generateShareLink() {
+  const fd = new FormData(); fd.append('report_id', shareTargetId);
+  const r = await fetch('/api/reports/share', { method: 'POST', body: fd });
+  const d = await r.json();
+  if (d.success && d.share_url) {
+    document.getElementById('shareUrlInput').value = d.share_url;
+    document.getElementById('shareUrlRow').style.display = 'flex';
+    document.getElementById('revokeBtn').style.display   = 'inline-block';
+    document.getElementById('shareGenBtn').style.display = 'none';
+    document.getElementById('shareModalDesc').textContent = 'Share this secure link with anyone:';
+    // Update card button state
+    const btn = document.querySelector(`#rc-${shareTargetId} .rc-btn.share-on`) ||
+                document.querySelectorAll(`#rc-${shareTargetId} .rc-btn`)[1];
+    if (btn) btn.classList.add('share-on');
+  }
+}
+
+async function revokeShareLink() {
+  if (!confirm('Revoke this share link? Anyone with the link will lose access.')) return;
+  const fd = new FormData(); fd.append('report_id', shareTargetId);
+  const r = await fetch('/api/reports/share', { method: 'POST', body: fd });
+  const d = await r.json();
+  if (d.revoked) {
+    closeShareModal();
+    location.reload();
+  }
+}
+
+function copyShareUrl() {
+  const inp = document.getElementById('shareUrlInput');
+  navigator.clipboard.writeText(inp.value).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = '✅ Copied';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+// Close modal on overlay click
+document.getElementById('shareModal').addEventListener('click', function(e) {
+  if (e.target === this) closeShareModal();
+});
+
+// ── AI Report Comparison ───────────────────────────────────────────────────────
+async function runComparison() {
+  const aId = document.getElementById('compareA').value;
+  const bId = document.getElementById('compareB').value;
+  if (!aId || !bId) { alert('Please select two reports to compare.'); return; }
+  if (aId === bId)  { alert('Please select two different reports.'); return; }
+
+  const btn = document.querySelector('.btn-compare');
+  btn.disabled = true;
+  btn.textContent = '⏳ Analysing…';
+
+  const fd = new FormData();
+  fd.append('report_a_id', aId);
+  fd.append('report_b_id', bId);
+
+  try {
+    const r = await fetch('/api/reports/compare', { method: 'POST', body: fd });
+    const d = await r.json();
+
+    if (d.error) {
+      alert('Comparison error: ' + d.error);
+      return;
+    }
+
+    // Render KPI tiles
+    const kpis = [
+      { label: 'Income',        a: d.income.a,       b: d.income.b,       diff: d.income.diff,       pct: d.income.pct,       arrow: d.income.arrow },
+      { label: 'Expenses',      a: d.expenses.a,     b: d.expenses.b,     diff: d.expenses.diff,     pct: d.expenses.pct,     arrow: d.expenses.arrow },
+      { label: 'Savings',       a: d.savings.a,      b: d.savings.b,      diff: d.savings.diff,      pct: d.savings.pct,      arrow: d.savings.arrow },
+      { label: 'Health Score',  a: d.health_score.a, b: d.health_score.b, diff: d.health_score.diff, pct: d.health_score.pct, arrow: d.health_score.arrow },
+      { label: 'Portfolio',     a: d.portfolio.a,    b: d.portfolio.b,    diff: d.portfolio.diff,    pct: d.portfolio.pct,    arrow: d.portfolio.arrow },
+    ];
+
+    const fmtInr = v => '₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0});
+
+    document.getElementById('compareKpis').innerHTML = kpis.map(k => {
+      const up = k.diff >= 0;
+      // For expenses: up is bad, for others: up is good
+      const posLabel = ['Expenses'].includes(k.label) ? !up : up;
+      const diffClass = posLabel ? 'diff-up' : 'diff-dn';
+      const sign = k.diff >= 0 ? '+' : '−';
+      return `<div class="compare-kpi">
+        <div class="ck-label">${k.label}</div>
+        <div class="ck-a">${k.label === 'Health Score' ? k.a + '/100' : fmtInr(k.a)}</div>
+        <div class="ck-b">${k.label === 'Health Score' ? k.b + '/100' : fmtInr(k.b)}</div>
+        <div class="ck-diff ${diffClass}">${k.arrow} ${sign}${Math.abs(k.pct).toFixed(1)}%</div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('compareNarrative').textContent = d.narrative || '';
+    document.getElementById('compareResult').classList.add('show');
+  } catch (e) {
+    alert('Network error during comparison.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⚡ Run AI Comparison';
+}
+</script>
+{% endblock %}

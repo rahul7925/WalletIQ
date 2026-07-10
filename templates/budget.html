@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Budgets — WalletIQ{% endblock %}
+
+{% block extra_style %}
+.budget-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.bcard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.bcard:hover { border-color: var(--border2); transform: translateY(-1px); }
+.bcard.over { border-color: rgba(224,90,90,0.3); background: rgba(224,90,90,0.02); }
+.bcard-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+.bcard-icon { font-size: 24px; margin-bottom: 6px; }
+.bcard-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.bcard-pct { font-family: var(--font-mono); font-size: 30px; font-weight: 600; line-height: 1; }
+.bcard-nums { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 16px; }
+.bcard-num { }
+.bcard-num-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; }
+.bcard-num-val { font-family: var(--font-mono); font-size: 14px; font-weight: 500; }
+.over-alert { background: var(--red-dim); border: 1px solid rgba(224,90,90,0.2); color: var(--red); padding: 8px 12px; border-radius: 8px; font-size: 12px; margin-top: 12px; }
+.empty-state { text-align: center; padding: 60px 20px; }
+.empty-icon { font-size: 40px; margin-bottom: 14px; opacity: 0.25; }
+.budget-stat-grid { grid-template-columns: repeat(3, 1fr); margin-bottom: 24px; }
+@media (max-width: 767px) {
+  .budget-stat-grid { grid-template-columns: 1fr; }
+  .budget-cards { grid-template-columns: 1fr; }
+  .bcard-nums { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .page-actions .btn { width: 100%; justify-content: center; }
+}
+@media (max-width: 480px) {
+  .bcard-pct { font-size: 24px; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-eyebrow">{{ now.strftime('%B %Y') }}</div>
+    <div class="page-title">{% if lang=='ta' %}பட்ஜெட் மேலாளர்{% else %}Budget Manager{% endif %}</div>
+    <div class="page-subtitle">{% if lang=='ta' %}மாத வரவு செலவு கண்காணிப்பு{% else %}Monthly spending limits by category{% endif %}</div>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="openModal('add-budget-modal')">+ Set budget</button>
+  </div>
+</div>
+
+<div class="stat-grid budget-stat-grid">
+  <div class="stat-card gold-card">
+    <div class="stat-label">Total Budgeted</div>
+    <div class="stat-value gold">₹{{ "{:,.0f}".format(total_budget) }}</div>
+  </div>
+  <div class="stat-card blue-card">
+    <div class="stat-label">Total Spent</div>
+    <div class="stat-value blue">₹{{ "{:,.0f}".format(total_spent) }}</div>
+  </div>
+  <div class="stat-card green-card">
+    <div class="stat-label">Remaining</div>
+    <div class="stat-value green">₹{{ "{:,.0f}".format(total_budget - total_spent) }}</div>
+  </div>
+</div>
+
+{% if budget_data %}
+<div class="budget-cards">
+  {% for b in budget_data %}
+  <div class="bcard {{ 'over' if b.over else '' }}">
+    <div class="bcard-head">
+      <div>
+        <div class="bcard-icon">{{ b.icon }}</div>
+        <div class="bcard-name">{{ b.category }}</div>
+      </div>
+      <div class="bcard-pct" style="color:{{ 'var(--red)' if b.over else 'var(--gold2)' }}">{{ b.pct }}%</div>
+    </div>
+    <div class="progress" style="height:6px">
+      <div class="progress-fill" style="width:{{ b.pct }}%;background:{{ 'var(--red)' if b.over else b.color }}"></div>
+    </div>
+    <div class="bcard-nums">
+      <div class="bcard-num">
+        <div class="bcard-num-label">Limit</div>
+        <div class="bcard-num-val">₹{{ "{:,.0f}".format(b.budget) }}</div>
+      </div>
+      <div class="bcard-num">
+        <div class="bcard-num-label">Spent</div>
+        <div class="bcard-num-val" style="color:{{ 'var(--red)' if b.over else 'var(--text)' }}">₹{{ "{:,.0f}".format(b.spent) }}</div>
+      </div>
+      <div class="bcard-num">
+        <div class="bcard-num-label">Left</div>
+        <div class="bcard-num-val" style="color:var(--green)">₹{{ "{:,.0f}".format(b.remaining) }}</div>
+      </div>
+    </div>
+    {% if b.over %}<div class="over-alert">Over budget by ₹{{ "{:,.0f}".format(b.spent - b.budget) }}</div>{% endif %}
+    <form action="/budget/delete/{{ b.id }}" method="POST"
+      onsubmit="return confirm('Remove this budget?')" style="margin-top:14px">
+      <button class="btn btn-danger btn-sm" style="width:100%;justify-content:center">Remove</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-icon">🎯</div>
+    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">No budgets set</div>
+    <p style="font-size:13.5px;color:var(--text3);margin-bottom:20px;line-height:1.6">
+      Set monthly limits per category and get alerted before you overspend.
+    </p>
+    <button class="btn btn-primary" onclick="openModal('add-budget-modal')">Set your first budget</button>
+  </div>
+</div>
+{% endif %}
+
+<div class="modal-overlay" id="add-budget-modal"
+  onclick="if(event.target===this)closeModal('add-budget-modal')">
+  <div class="modal">
+    <div class="modal-title">
+      Set monthly budget
+      <span class="modal-close" onclick="closeModal('add-budget-modal')">✕</span>
+    </div>
+    <form action="/budget/add" method="POST">
+      <div class="form-grid" style="gap:16px">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-control" name="category" required>
+            {% for cat in categories %}
+            <option value="{{ cat }}">{{ category_icons.get(cat,'·') }} {{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monthly limit ₹</label>
+          <input class="form-control" type="number" name="amount" min="1"
+            placeholder="e.g. 5000" required style="font-family:var(--font-mono)">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" style="justify-content:center">Save budget</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

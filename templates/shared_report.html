@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ report.report_name }} — WalletIQ Financial Report</title>
+  <meta name="description" content="Shared financial report from WalletIQ X AI Financial Intelligence Platform.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink:   #0f172a;
+      --muted: #64748b;
+      --line:  #e2e8f0;
+      --accent:#2563eb;
+      --green: #16a34a;
+      --red:   #dc2626;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; color: var(--ink); }
+
+    .page { max-width: 820px; margin: 0 auto; padding: 40px 32px; }
+
+    /* Cover */
+    .cover {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 48px 40px 40px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover::after {
+      content: '';
+      position: absolute;
+      width: 280px; height: 280px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50%;
+      top: -80px; right: -80px;
+    }
+    .cover-brand { font-size: 13px; font-weight: 700; letter-spacing: 3px; color: #60a5fa; text-transform: uppercase; margin-bottom: 16px; }
+    .cover-title { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+    .cover-sub   { font-size: 15px; color: #94a3b8; }
+    .cover-meta  { margin-top: 24px; display: flex; gap: 24px; flex-wrap: wrap; }
+    .cover-badge { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; }
+    .cover-badge span { display: block; font-size: 10px; color: #94a3b8; font-weight: 400; margin-bottom: 2px; }
+
+    /* KPI grid */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 28px; }
+    @media (max-width:600px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+    .kpi-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 16px; }
+    .kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .kpi-value { font-size: 20px; font-weight: 800; color: var(--ink); }
+    .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* Section */
+    .section { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 22px 20px; margin-bottom: 20px; }
+    .section-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { padding: 10px 12px; text-align: left; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); }
+    td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+    tr:last-child td { border-bottom: none; }
+
+    /* AI commentary */
+    .ai-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 18px; font-size: 13.5px; line-height: 1.6; color: #1e40af; }
+
+    /* Footer */
+    .footer { margin-top: 40px; text-align: center; font-size: 12px; color: var(--muted); padding-top: 20px; border-top: 1px solid var(--line); }
+
+    @media print {
+      body { background: #fff; }
+      .page { padding: 20px; }
+      .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Cover -->
+  <div class="cover">
+    <div class="cover-brand">WalletIQ X — AI Financial Intelligence</div>
+    <div class="cover-title">{{ report.report_name }}</div>
+    <div class="cover-sub">{{ report.report_type }} · Generated {{ report.generated_date.strftime('%d %B %Y') }}</div>
+    <div class="cover-meta">
+      <div class="cover-badge"><span>Downloads</span>{{ report.download_count }}</div>
+      <div class="cover-badge"><span>Format</span>Shared View</div>
+      {% if report.version and report.version > 1 %}
+      <div class="cover-badge"><span>Version</span>v{{ report.version }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- KPI cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Monthly Income</div>
+      <div class="kpi-value">₹{{ "{:,.0f}".format(data.income) }}</div>
+      <div class="kpi-sub">Gross earnings</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Expenses</div>
+      <div class="kpi-value">₹{{ "{:,.0f}".format(data.expenses_total) }}</div>
+      <div class="kpi-sub">All categories</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Net Savings</div>
+      <div class="kpi-value" style="color: #16a34a;">₹{{ "{:,.0f}".format(data.savings) }}</div>
+      <div class="kpi-sub">{{ "{:.1f}".format(data.savings / data.income * 100 if data.income > 0 else 0) }}% rate</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Health Score</div>
+      <div class="kpi-value" style="color: #2563eb;">{{ data.health_score }}<span style="font-size:13px;font-weight:400;">/100</span></div>
+      <div class="kpi-sub">{{ data.health_status }}</div>
+    </div>
+  </div>
+
+  <!-- AI Commentary -->
+  <div class="section">
+    <div class="section-title">🤖 AI Financial Commentary</div>
+    <div class="ai-box">{{ data.ai_commentary }}</div>
+  </div>
+
+  <!-- Expense Breakdown -->
+  {% if data.cat_totals %}
+  <div class="section">
+    <div class="section-title">📊 Category Spending Breakdown</div>
+    <table>
+      <thead><tr><th>Category</th><th>Amount Spent</th><th>% of Total</th></tr></thead>
+      <tbody>
+        {% for cat, val in data.cat_totals.items() %}
+        <tr>
+          <td>{{ cat }}</td>
+          <td>₹{{ "{:,.2f}".format(val) }}</td>
+          <td>{{ "{:.1f}".format(val / (data.expenses_total or 1) * 100) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Budget Performance -->
+  {% if data.budgets %}
+  <div class="section">
+    <div class="section-title">🎯 Budget vs Actual</div>
+    <table>
+      <thead><tr><th>Category</th><th>Budget</th><th>Spent</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for b in data.budgets %}
+        <tr>
+          <td>{{ b.category }}</td>
+          <td>₹{{ "{:,.0f}".format(b.budget) }}</td>
+          <td>₹{{ "{:,.0f}".format(b.spent) }}</td>
+          <td style="color: {{ '#dc2626' if b.over else '#16a34a' }}; font-weight: 600;">
+            {{ "Over Budget" if b.over else "Within Budget" }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Investments -->
+  {% if data.investments %}
+  <div class="section">
+    <div class="section-title">📈 Investment Portfolio</div>
+    <table>
+      <thead><tr><th>Asset</th><th>Invested</th><th>Current Value</th><th>ROI</th></tr></thead>
+      <tbody>
+        {% for inv in data.investments %}
+        {% set roi = ((inv.current_value / inv.invested - 1) * 100) if inv.invested > 0 else 0 %}
+        <tr>
+          <td>{{ inv.name }}</td>
+          <td>₹{{ "{:,.0f}".format(inv.invested) }}</td>
+          <td style="font-weight:600;">₹{{ "{:,.0f}".format(inv.current_value) }}</td>
+          <td style="color: {{ '#16a34a' if roi >= 0 else '#dc2626' }}; font-weight:600;">{{ "{:+.2f}".format(roi) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    This report was generated by <strong>WalletIQ X</strong> AI Financial Intelligence Platform and shared securely.<br>
+    Report accuracy is based on logged financial data at time of generation.
+  </div>
+</div>
+</body>
+</html>

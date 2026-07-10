@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Bills &#x26; EMI — WalletIQ{% endblock %}
+{% block extra_style %}
+.bill-list{display:flex;flex-direction:column;gap:10px}
+.bill-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;display:flex;align-items:center;gap:14px;transition:border-color 0.2s}
+.bill-item:hover{border-color:var(--border2)}
+.bill-item.overdue{border-color:rgba(224,90,90,0.35);background:rgba(224,90,90,0.03)}
+.bill-item.due_soon{border-color:rgba(200,169,110,0.35)}
+.bill-item.paid{opacity:0.5}
+.bill-icon{width:42px;height:42px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.bill-info{flex:1;min-width:0}
+.bill-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px}
+.bill-meta{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:8px}
+.bill-amount{font-family:var(--font-mono);font-size:16px;font-weight:500;flex-shrink:0;margin-right:12px}
+.status-tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
+.st-overdue{background:var(--red-dim);color:var(--red)}
+.st-due_soon{background:var(--gold-dim);color:var(--gold)}
+.st-upcoming{background:var(--blue-dim);color:var(--blue)}
+.st-paid{background:var(--green-dim);color:var(--green)}
+.bill-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap}
+@media (max-width:767px){
+  .bill-item{flex-wrap:wrap;padding:14px 16px}
+  .bill-amount{width:100%;order:3;margin:8px 0 0;text-align:left}
+  .bill-actions{width:100%;justify-content:flex-end;margin-top:8px}
+  .stat-grid{grid-template-columns:1fr!important}
+}
+@media (max-width:480px){
+  .bill-meta{flex-direction:column;align-items:flex-start;gap:4px}
+}
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-eyebrow">{{ now.strftime("%B %Y") }}</div>
+    <div class="page-title">{% if lang=="ta" %}பில்கள் &#x26; EMI{% else %}Bills &#x26; EMI{% endif %}</div>
+    <div class="page-subtitle">{% if lang=="ta" %}மாத கட்டண நினைவூட்டல்கள்{% else %}Monthly payment reminders{% endif %}</div>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="openModal('add-bill-modal')">+ Add bill</button>
+  </div>
+</div>
+<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
+  <div class="stat-card gold-card"><div class="stat-label">Monthly Total</div><div class="stat-value gold">&#8377;{{ "{:,.0f}".format(total_monthly) }}</div></div>
+  <div class="stat-card green-card"><div class="stat-label">Paid</div><div class="stat-value green">&#8377;{{ "{:,.0f}".format(total_paid) }}</div></div>
+  <div class="stat-card red-card"><div class="stat-label">Pending</div><div class="stat-value red">&#8377;{{ "{:,.0f}".format(total_pending) }}</div></div>
+</div>
+{% set overdue = bill_data|selectattr("status","equalto","overdue")|list %}
+{% if overdue %}
+<div style="background:rgba(224,90,90,0.07);border:1px solid rgba(224,90,90,0.2);border-radius:var(--radius);padding:13px 18px;margin-bottom:18px;display:flex;align-items:center;gap:10px">
+  <span style="font-size:16px">&#x26A0;&#xFE0F;</span>
+  <div><div style="font-size:13.5px;font-weight:600;color:var(--red)">{{ overdue|length }} overdue bill{{ "s" if overdue|length>1 }}</div><div style="font-size:12px;color:var(--text3)">Pay now to avoid late fees</div></div>
+</div>
+{% endif %}
+{% if bill_data %}
+<div class="bill-list">
+{% for b in bill_data %}
+<div class="bill-item {{ b.status }}">
+  <div class="bill-icon">{{ b.icon }}</div>
+  <div class="bill-info">
+    <div class="bill-name">{{ b.name }}</div>
+    <div class="bill-meta">
+      <span>Due {{ b.due_day }}{{ "st" if b.due_day==1 else ("nd" if b.due_day==2 else ("rd" if b.due_day==3 else "th")) }} every month</span>
+      <span class="status-tag st-{{ b.status }}">{{ "Overdue" if b.status=="overdue" else ("Due soon" if b.status=="due_soon" else ("Paid" if b.status=="paid" else "Upcoming")) }}</span>
+      {% if not b.is_paid and b.days_left >= 0 %}<span>{{ b.days_left }}d left</span>{% endif %}
+    </div>
+  </div>
+  <div class="bill-amount" style="color:{{ "var(--red)" if b.status=="overdue" else ("var(--green)" if b.status=="paid" else "var(--gold2)") }}">&#8377;{{ "{:,.0f}".format(b.amount) }}</div>
+  <div class="bill-actions">
+  {% if not b.is_paid %}<form action="/bills/pay/{{ b.id }}" method="POST"><button class="btn btn-success btn-sm">Mark paid</button></form>{% endif %}
+  <form action="/bills/delete/{{ b.id }}" method="POST" onsubmit="return confirm('Remove?')"><button class="btn btn-danger btn-sm">&#x2715;</button></form>
+  </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:60px 20px">
+  <div style="font-size:40px;margin-bottom:14px;opacity:0.3">&#x1F514;</div>
+  <div style="font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text)">No bills tracked</div>
+  <p style="color:var(--text3);font-size:13.5px;margin-bottom:20px">Add rent, subscriptions, EMIs and never miss a due date.</p>
+  <button class="btn btn-primary" onclick="openModal('add-bill-modal')">Add first bill</button>
+</div>
+{% endif %}
+<div class="modal-overlay" id="add-bill-modal" onclick="if(event.target===this)closeModal('add-bill-modal')">
+  <div class="modal">
+    <div class="modal-title">Add bill / EMI <span class="modal-close" onclick="closeModal('add-bill-modal')">&#x2715;</span></div>
+    <form action="/bills/add" method="POST">
+      <div class="form-grid" style="gap:14px">
+        <div class="form-group"><label class="form-label">Bill name</label><input class="form-control" type="text" name="name" placeholder="e.g. Jio Recharge, Home Loan EMI" required></div>
+        <div class="form-grid form-2col" style="gap:14px">
+          <div class="form-group"><label class="form-label">Amount &#8377;</label><input class="form-control" type="number" name="amount" min="1" step="0.01" placeholder="0.00" required style="font-family:var(--font-mono)"></div>
+          <div class="form-group"><label class="form-label">Due day (1–31)</label><input class="form-control" type="number" name="due_day" min="1" max="31" placeholder="5" required></div>
+        </div>
+        <div class="form-group"><label class="form-label">Category</label><select class="form-control" name="category">{% for cat in categories %}<option value="{{ cat }}" {% if cat=="Bills" %}selected{% endif %}>{{ cat }}</option>{% endfor %}</select></div>
+        <div class="form-group"><label class="form-label">Note (optional)</label><input class="form-control" type="text" name="note" placeholder="e.g. Auto-pay enabled"></div>
+        <div style="display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--text2)"><input type="checkbox" name="is_recurring" checked style="width:14px;height:14px;accent-color:var(--gold);cursor:pointer"> Recurring monthly</div>
+        <button type="submit" class="btn btn-primary btn-lg" style="justify-content:center">Add bill</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

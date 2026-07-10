@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WalletIQ — Create Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0A0A0F; --surface:#141420; --surface2:#1A1A28; --surface3:#222234;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --text:#F0EEE6; --text2:#A8A49C; --text3:#6B6760;
+  --gold:#C8A96E; --gold2:#E2C98A; --gold-dim:rgba(200,169,110,0.10);
+  --green:#4CAF82; --red:#E05A5A;
+  --font-ui:'Inter',system-ui,sans-serif;
+  --font-display:'Playfair Display',Georgia,serif;
+}
+html,body { min-height:100%; background:var(--bg); color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 80% 10%, rgba(200,169,110,0.05) 0%, transparent 55%);
+}
+.page {
+  position:relative; z-index:1; min-height:100vh;
+  display:flex; align-items:center; justify-content:center; padding:40px 20px;
+}
+.card {
+  width:100%; max-width:460px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:40px 40px 36px;
+  box-shadow:0 24px 48px rgba(0,0,0,0.4);
+  animation:card-in 0.28s ease both;
+}
+@keyframes card-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.card-header { margin-bottom:28px; }
+.brand { display:flex; align-items:center; gap:9px; margin-bottom:24px; }
+.brand-icon { width:30px; height:30px; background:var(--gold); border-radius:7px; display:flex; align-items:center; justify-content:center; }
+.brand-icon svg { width:16px; height:16px; fill:#0A0A0F; }
+.brand-name { font-family:var(--font-display); font-size:16px; font-weight:600; color:var(--text); }
+.brand-name span { color:var(--gold); }
+.card-header h2 { font-family:var(--font-display); font-size:24px; font-weight:600; color:var(--text); letter-spacing:-0.01em; margin-bottom:5px; }
+.card-header p { font-size:13.5px; color:var(--text2); }
+
+.lang-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px; }
+.lang-opt { position:relative; cursor:pointer; }
+.lang-opt input { position:absolute; opacity:0; width:0; height:0; }
+.lang-card { display:flex; align-items:center; gap:9px; padding:11px 13px; background:var(--surface2); border:1.5px solid var(--border); border-radius:9px; cursor:pointer; transition:border-color 0.15s, background 0.15s; }
+.lang-opt input:checked + .lang-card { border-color:var(--gold); background:var(--gold-dim); }
+.lang-flag { font-size:18px; line-height:1; }
+.lang-en { font-size:13px; font-weight:500; color:var(--text); display:block; }
+.lang-native { font-size:11px; color:var(--text3); display:block; }
+.lang-check { width:15px; height:15px; border-radius:50%; border:1.5px solid var(--border2); margin-left:auto; display:flex; align-items:center; justify-content:center; font-size:9px; color:transparent; transition:all 0.15s; }
+.lang-opt input:checked + .lang-card .lang-check { background:var(--gold); border-color:var(--gold); color:#0A0A0F; font-weight:700; }
+
+.error-msg { background:rgba(224,90,90,0.08); border:1px solid rgba(224,90,90,0.2); color:var(--red); padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:18px; }
+.divider { display:flex; align-items:center; gap:12px; margin:20px 0; color:var(--text3); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; }
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.form-grid { display:grid; gap:14px; }
+.form-2col { grid-template-columns:1fr 1fr; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.09em; color:var(--text3); }
+.field-wrap { position:relative; }
+.field-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:13px; pointer-events:none; }
+.field-wrap input, .form-group select {
+  width:100%; padding:10px 13px 10px 37px;
+  background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  color:var(--text); font-family:var(--font-ui); font-size:13.5px; outline:none; transition:all 0.15s;
+}
+.form-group select { padding-left:13px; }
+.field-wrap input::placeholder { color:var(--text3); }
+.field-wrap input:focus, .form-group select:focus { border-color:var(--gold); background:var(--surface3); box-shadow:0 0 0 3px rgba(200,169,110,0.08); }
+.form-group select option { background:var(--surface); }
+
+/* Password strength */
+.strength-row { display:flex; gap:4px; margin-top:7px; }
+.strength-seg { flex:1; height:3px; background:var(--surface3); border-radius:99px; transition:background 0.3s; }
+.strength-label { font-size:11px; color:var(--text3); margin-top:5px; }
+
+.btn-submit { width:100%; padding:12px; background:var(--gold); border:none; border-radius:8px; color:#0A0A0F; font-family:var(--font-ui); font-size:13.5px; font-weight:600; cursor:pointer; transition:background 0.15s, box-shadow 0.15s; margin-top:6px; letter-spacing:0.02em; }
+.btn-submit:hover { background:var(--gold2); box-shadow:0 4px 20px rgba(200,169,110,0.22); }
+.btn-submit:active { transform:scale(0.99); }
+.form-footer { text-align:center; font-size:13px; color:var(--text2); margin-top:20px; }
+.form-footer a { color:var(--gold); text-decoration:none; font-weight:500; }
+.form-footer a:hover { color:var(--gold2); }
+
+@media (max-width:480px) { .card { padding:28px 18px; } .form-2col { grid-template-columns:1fr; } .lang-row { gap:8px; } }
+@media (max-width:380px) { .page { padding:24px 12px; } .card { padding:24px 16px; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="card">
+    <div class="card-header">
+      <div class="brand">
+        <div class="brand-icon"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></div>
+        <span class="brand-name">Wallet<span>IQ</span></span>
+      </div>
+      <h2>Create your account</h2>
+      <p>Get started — it takes under a minute</p>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:var(--text3);margin-bottom:10px;">Preferred language / மொழி தேர்வு</p>
+    <form method="POST">
+      <div class="lang-row">
+        <label class="lang-opt">
+          <input type="radio" name="language" value="en" checked>
+          <div class="lang-card"><span class="lang-flag">🇬🇧</span><div><span class="lang-en">English</span><span class="lang-native">English</span></div><div class="lang-check">✓</div></div>
+        </label>
+        <label class="lang-opt">
+          <input type="radio" name="language" value="ta">
+          <div class="lang-card"><span class="lang-flag">🇮🇳</span><div><span class="lang-en">Tamil</span><span class="lang-native">தமிழ்</span></div><div class="lang-check">✓</div></div>
+        </label>
+      </div>
+
+      <div class="divider">account details</div>
+
+      {% if error %}<div class="error-msg">{{ error }}</div>{% endif %}
+
+      <div class="form-grid">
+        <div class="form-grid form-2col">
+          <div class="form-group">
+            <label>Full Name</label>
+            <div class="field-wrap">
+              <span class="field-icon">✏️</span>
+              <input type="text" name="full_name" placeholder="Your name">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Username *</label>
+            <div class="field-wrap">
+              <span class="field-icon">@</span>
+              <input type="text" name="username" placeholder="username" required minlength="3" id="uname" oninput="checkUser(this)">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Email (optional)</label>
+          <div class="field-wrap">
+            <span class="field-icon">✉️</span>
+            <input type="email" name="email" placeholder="you@email.com">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Password *</label>
+          <div class="field-wrap">
+            <span class="field-icon">🔑</span>
+            <input type="password" name="password" id="pwd" placeholder="Min. 6 characters" required minlength="6" oninput="checkStrength(this.value)">
+          </div>
+          <div class="strength-row" id="strength-segs">
+            <div class="strength-seg" id="s1"></div>
+            <div class="strength-seg" id="s2"></div>
+            <div class="strength-seg" id="s3"></div>
+            <div class="strength-seg" id="s4"></div>
+          </div>
+          <div class="strength-label" id="strength-label">Enter a password</div>
+        </div>
+
+        <div class="form-group">
+          <label>Confirm Password *</label>
+          <div class="field-wrap">
+            <span class="field-icon">🔒</span>
+            <input type="password" name="confirm_password" id="confirm" placeholder="Repeat password" required oninput="checkMatch()">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>6-Digit Recovery PIN * (For Password Reset)</label>
+          <div class="field-wrap">
+            <span class="field-icon">🔢</span>
+            <input type="password" name="recovery_pin" id="pin" placeholder="Exactly 6 digits" required maxlength="6" pattern="\d{6}" autocomplete="off">
+          </div>
+        </div>
+      </div>
+
+
+      <button type="submit" class="btn-submit" style="margin-top:20px">Create account</button>
+    </form>
+
+    <div class="form-footer">Already have an account? <a href="/login">Sign in →</a></div>
+  </div>
+</div>
+<script>
+function checkStrength(v) {
+
+  const colors = ['','#E05A5A','#C8A96E','#4CAF82','#4CAF82'];
+  const labels = ['','Weak','Fair','Strong','Strong'];
+  const checks = [v.length>=6, /[A-Z]/.test(v), /[0-9]/.test(v), /[^A-Za-z0-9]/.test(v)];
+  const score = checks.filter(Boolean).length;
+  for(let i=1;i<=4;i++){
+    document.getElementById('s'+i).style.background = i<=score ? (colors[score]||'') : 'var(--surface3)';
+  }
+  document.getElementById('strength-label').textContent = v.length ? (labels[score]||'') : 'Enter a password';
+  document.getElementById('strength-label').style.color = colors[score]||'var(--text3)';
+}
+function checkMatch() {
+  const p=document.getElementById('pwd').value;
+  const c=document.getElementById('confirm');
+  c.style.borderColor = c.value.length===0?'' : p===c.value?'var(--green)':'var(--red)';
+}
+function checkUser(inp) {
+  inp.style.borderColor = inp.value.length>=3 ? 'var(--green)' : '';
+}
+</script>
+</body>
+</html>

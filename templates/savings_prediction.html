@@ -1,0 +1,624 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if lang=='ta' %}சேமிப்பு கணிப்பு{% else %}Savings Forecast{% endif %} - WalletIQ
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="padding: 24px; max-width: 1300px; margin: 0 auto; font-family: var(--font-sans, 'Inter', sans-serif);">
+  
+  <!-- Header Title -->
+  <div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 style="font-size: 28px; font-weight: 700; color: #fff; margin: 0 0 6px 0; background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        {% if lang=='ta' %}எதிர்கால சேமிப்பு & பணப்புழக்க கணிப்பு{% else %}Future Savings & Cash Flow Forecast{% endif %}
+      </h1>
+      <p style="font-size: 14px; color: var(--text-dim, #8f9cae); margin: 0;">
+        {% if lang=='ta' %}AI-இயங்கும் கணிப்புகள் மற்றும் உங்கள் முதலீடுகளின் வளர்ச்சிப் பாதை.{% else %}AI-powered projections and growth timelines of your financial future.{% endif %}
+      </p>
+    </div>
+    
+    <!-- Action Button to Save Current Configuration -->
+    <button type="button" class="btn btn-primary" onclick="saveCurrentProjection()" id="save-btn" style="padding: 10px 20px; font-size: 14px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+      <span>💾</span> {% if lang=='ta' %}இந்த கணிப்பைச் சேமிக்கவும்{% else %}Save This Projection{% endif %}
+    </button>
+  </div>
+
+  <div class="row" style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 20px;">
+    
+    <!-- Left Column: Controls & AI Advice -->
+    <div style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- Interactive Sliders / Simulation Parameters -->
+      <div class="card" style="padding: 22px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+        <h3 style="font-size: 18px; color: #fff; margin: 0 0 20px; display: flex; align-items: center; gap: 10px; font-weight: 600;">
+          <span style="font-size: 20px;">⚙️</span> {% if lang=='ta' %}முன்கணிப்பு அளவுருக்கள்{% else %}Forecast Settings{% endif %}
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          <!-- Slider 1: Expected Salary Growth -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #fff; margin-bottom: 8px; font-weight: 500;">
+              <span>📈 {% if lang=='ta' %}எதிர்பார்க்கும் சம்பள உயர்வு{% else %}Expected Salary Growth{% endif %}</span>
+              <span id="sal-growth-val" style="color: #6366f1; font-weight: bold; font-family: var(--font-mono)">{{ forecast.salary_growth }}%</span>
+            </div>
+            <input type="range" id="sal-growth-slider" min="0" max="30" value="{{ forecast.salary_growth }}" step="0.5" style="width: 100%; accent-color: #6366f1;" oninput="updateSimulation()">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #5f748d; margin-top: 4px;">
+              <span>0%</span>
+              <span>30% ({% if lang=='ta' %}அதிவேகம்{% else %}High{% endif %})</span>
+            </div>
+          </div>
+
+          <!-- Slider 2: Inflation Rate -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #fff; margin-bottom: 8px; font-weight: 500;">
+              <span>📉 {% if lang=='ta' %}எதிர்பார்க்கும் பணவீக்கம்{% else %}Expected Inflation Rate{% endif %}</span>
+              <span id="inflation-val" style="color: #ef4444; font-weight: bold; font-family: var(--font-mono)">{{ forecast.inflation }}%</span>
+            </div>
+            <input type="range" id="inflation-slider" min="0" max="15" value="{{ forecast.inflation }}" step="0.5" style="width: 100%; accent-color: #ef4444;" oninput="updateSimulation()">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #5f748d; margin-top: 4px;">
+              <span>0%</span>
+              <span>15%</span>
+            </div>
+          </div>
+
+          <!-- Slider 3: Moderate Investment Return -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #fff; margin-bottom: 8px; font-weight: 500;">
+              <span>💰 {% if lang=='ta' %}முதலீட்டு வருவாய் விகிதம்{% else %}Investment Return Rate{% endif %}</span>
+              <span id="return-val" style="color: #10b981; font-weight: bold; font-family: var(--font-mono)">{{ forecast.moderate_return }}%</span>
+            </div>
+            <input type="range" id="return-slider" min="4" max="20" value="{{ forecast.moderate_return }}" step="0.5" style="width: 100%; accent-color: #10b981;" oninput="updateSimulation()">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #5f748d; margin-top: 4px;">
+              <span>4% (FDs)</span>
+              <span>20% (Equity)</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recalculate button -->
+        <button type="button" class="btn" style="width: 100%; margin-top: 24px; padding: 11px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; border-radius: 8px; font-weight: 600; cursor: pointer;" onclick="applyQueryParams()">
+          🔄 {% if lang=='ta' %}தொடர்புகளைப் பயன்படுத்துக{% else %}Apply Parameters to AI advice{% endif %}
+        </button>
+      </div>
+
+      <!-- AI Recommendations Card -->
+      <div class="card" style="padding: 22px; border-radius: 16px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(30, 41, 59, 0.45) 100%); border: 1px solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(10px);">
+        <h3 style="font-size: 18px; color: #fff; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; font-weight: 600;">
+          <span style="font-size: 20px;">✦</span> {% if lang=='ta' %}AI சேமிப்பு ஆலோசனைகள்{% else %}AI Savings Recommendations{% endif %}
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          {% for r in recommendations %}
+            <div style="display: flex; align-items: flex-start; gap: 12px; background: rgba(15, 23, 42, 0.35); padding: 12px 14px; border-radius: 10px; border-left: 3px solid #6366f1;">
+              <span style="font-size: 15px; margin-top: 2px;">💡</span>
+              <p style="font-size: 13.5px; color: #e2e8f0; margin: 0; line-height: 1.45; font-weight: 400;">{{ r }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Right Column: Forecast KPIs and Charts -->
+    <div style="flex: 2 2 680px; display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- Projections Grid Card -->
+      <div class="card" style="padding: 22px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+        <h3 style="font-size: 18px; color: #fff; margin: 0 0 18px; font-weight: 600;">
+          🔮 {% if lang=='ta' %}சேமிப்பு கணிப்பு காலவரம்பு{% else %}Savings Projection Timeline{% endif %}
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+          
+          <!-- Period: 3 Months -->
+          <div style="background: rgba(15, 23, 42, 0.4); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); text-align: center;">
+            <div style="font-size: 12px; color: var(--text-dim, #8f9cae); margin-bottom: 6px; font-weight: 500;">
+              {% if lang=='ta' %}3 மாதங்களுக்குப் பின்{% else %}After 3 Months{% endif %}
+            </div>
+            <div id="kpi-3m" style="font-size: 18px; font-weight: bold; color: #fff; font-family: var(--font-mono); margin-bottom: 8px;">
+              ₹{{ "{:,.0f}".format(forecast.moderate.savings_3m) }}
+            </div>
+            <div style="font-size: 10px; color: #5f748d; line-height: 1.4;">
+              <span style="color: #ef4444;" id="con-3m">₹{{ "{:,.0f}".format(forecast.conservative.savings_3m) }} (C)</span><br>
+              <span style="color: #10b981;" id="agg-3m">₹{{ "{:,.0f}".format(forecast.aggressive.savings_3m) }} (A)</span>
+            </div>
+          </div>
+
+          <!-- Period: 6 Months -->
+          <div style="background: rgba(15, 23, 42, 0.4); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); text-align: center;">
+            <div style="font-size: 12px; color: var(--text-dim, #8f9cae); margin-bottom: 6px; font-weight: 500;">
+              {% if lang=='ta' %}6 மாதங்களுக்குப் பின்{% else %}After 6 Months{% endif %}
+            </div>
+            <div id="kpi-6m" style="font-size: 18px; font-weight: bold; color: #fff; font-family: var(--font-mono); margin-bottom: 8px;">
+              ₹{{ "{:,.0f}".format(forecast.moderate.savings_6m) }}
+            </div>
+            <div style="font-size: 10px; color: #5f748d; line-height: 1.4;">
+              <span style="color: #ef4444;" id="con-6m">₹{{ "{:,.0f}".format(forecast.conservative.savings_6m) }} (C)</span><br>
+              <span style="color: #10b981;" id="agg-6m">₹{{ "{:,.0f}".format(forecast.aggressive.savings_6m) }} (A)</span>
+            </div>
+          </div>
+
+          <!-- Period: 1 Year -->
+          <div style="background: rgba(99, 102, 241, 0.08); padding: 16px; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.15); text-align: center;">
+            <div style="font-size: 12px; color: #a5b4fc; margin-bottom: 6px; font-weight: 600;">
+              {% if lang=='ta' %}1 வருடத்திற்குப் பின்{% else %}After 1 Year{% endif %}
+            </div>
+            <div id="kpi-1y" style="font-size: 18px; font-weight: bold; color: #a5b4fc; font-family: var(--font-mono); margin-bottom: 8px;">
+              ₹{{ "{:,.0f}".format(forecast.moderate.savings_1y) }}
+            </div>
+            <div style="font-size: 10px; color: #5f748d; line-height: 1.4;">
+              <span style="color: #ef4444;" id="con-1y">₹{{ "{:,.0f}".format(forecast.conservative.savings_1y) }} (C)</span><br>
+              <span style="color: #10b981;" id="agg-1y">₹{{ "{:,.0f}".format(forecast.aggressive.savings_1y) }} (A)</span>
+            </div>
+          </div>
+
+          <!-- Period: 5 Years -->
+          <div style="background: rgba(16, 185, 129, 0.08); padding: 16px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.15); text-align: center;">
+            <div style="font-size: 12px; color: #34d399; margin-bottom: 6px; font-weight: 600;">
+              {% if lang=='ta' %}5 வருடங்களுக்குப் பின்{% else %}After 5 Years{% endif %}
+            </div>
+            <div id="kpi-5y" style="font-size: 18px; font-weight: bold; color: #34d399; font-family: var(--font-mono); margin-bottom: 8px;">
+              ₹{{ "{:,.0f}".format(forecast.moderate.savings_5y) }}
+            </div>
+            <div style="font-size: 10px; color: #5f748d; line-height: 1.4;">
+              <span style="color: #ef4444;" id="con-5y">₹{{ "{:,.0f}".format(forecast.conservative.savings_5y) }} (C)</span><br>
+              <span style="color: #10b981;" id="agg-5y">₹{{ "{:,.0f}".format(forecast.aggressive.savings_5y) }} (A)</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Growth curve and timeline chart -->
+      <div class="card" style="padding: 22px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+          <h3 style="font-size: 18px; color: #fff; margin: 0; font-weight: 600;">
+            📈 {% if lang=='ta' %}சொத்து வளர்ச்சி பாதை (மூன்று காட்சிகள்){% else %}Net Worth Growth timeline (3 Scenarios){% endif %}
+          </h3>
+          <!-- Toggle Timeline -->
+          <div style="display: flex; background: rgba(15,23,42,0.4); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <button id="toggle-1y-btn" class="chart-tab active" onclick="setChartPeriod(12)" style="background: rgba(99,102,241,0.25); border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: #fff; cursor: pointer;">1 Year</button>
+            <button id="toggle-5y-btn" class="chart-tab" onclick="setChartPeriod(60)" style="background: transparent; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: #8f9cae; cursor: pointer;">5 Years</button>
+          </div>
+        </div>
+        <div style="height: 320px; position: relative;">
+          <canvas id="growthChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Cash Flow Stacked Bar Chart -->
+      <div class="card" style="padding: 22px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+        <h3 style="font-size: 18px; color: #fff; margin: 0 0 20px; font-weight: 600;">
+          📊 {% if lang=='ta' %}திட்டமிடப்பட்ட மாதாந்திர பணப்புழக்கம் (எதிர்பார்க்கும் முறை){% else %}Projected Monthly Cash Flow (Moderate Scenario){% endif %}
+        </h3>
+        <div style="height: 250px; position: relative;">
+          <canvas id="cashflowChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Saved Projections History -->
+      {% if saved_runs %}
+      <div class="card" style="padding: 22px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+        <h3 style="font-size: 18px; color: #fff; margin: 0 0 16px; font-weight: 600;">
+          📜 {% if lang=='ta' %}சேமிக்கப்பட்ட கணிப்புகள் வரலாறு{% else %}Saved Projections History{% endif %}
+        </h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--text-dim, #8f9cae); font-weight: 600;">
+                <th style="padding: 10px 8px;">Date</th>
+                <th style="padding: 10px 8px;">Salary Growth</th>
+                <th style="padding: 10px 8px;">Inflation</th>
+                <th style="padding: 10px 8px;">Return Rate</th>
+                <th style="padding: 10px 8px; text-align: right;">1-Yr Project</th>
+                <th style="padding: 10px 8px; text-align: right;">5-Yr Project</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in saved_runs %}
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); color: #fff;">
+                <td style="padding: 10px 8px; color: #5f748d;">{{ s.created_at }}</td>
+                <td style="padding: 10px 8px; font-family: var(--font-mono);">{{ s.sal_growth }}%</td>
+                <td style="padding: 10px 8px; font-family: var(--font-mono);">{{ s.inflation }}%</td>
+                <td style="padding: 10px 8px; font-family: var(--font-mono);">{{ s.moderate_return }}%</td>
+                <td style="padding: 10px 8px; text-align: right; font-weight: 600; color: #a5b4fc; font-family: var(--font-mono);">₹{{ "{:,.0f}".format(s.moderate_1y) }}</td>
+                <td style="padding: 10px 8px; text-align: right; font-weight: 600; color: #34d399; font-family: var(--font-mono);">₹{{ "{:,.0f}".format(s.moderate_5y) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+  </div>
+</div>
+
+<!-- Load ChartJS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Initial values loaded from backend
+  const startPortfolio = {{ forecast.current_savings }};
+  const startIncome = {{ forecast.moderate.income[0] }};
+  const startExpenses = {{ forecast.moderate.expenses[0] }};
+  
+  // Scenarios containers
+  let currentPeriod = 12; // default: 12 months chart
+  let chartInstance = null;
+  let cashflowChartInstance = null;
+
+  // We read the initial backend forecast data to speed up page load
+  const backendForecast = {{ forecast|tojson }};
+  let activeForecast = JSON.parse(JSON.stringify(backendForecast));
+
+  // Run the Simulation client-side on slider adjustments
+  function runClientSimulation(salGrowth, inflation, modReturn) {
+    const inc0 = startIncome;
+    const exp0 = startExpenses;
+    const port0 = startPortfolio;
+
+    // Investment ratio calculation
+    let invRatio = 0.15; // default
+    const monthlySavings = inc0 - exp0;
+    if (inc0 > 0 && monthlySavings > 0) {
+      invRatio = (monthlySavings * 0.4) / inc0;
+    }
+    if (invRatio > 0.8) invRatio = 0.8;
+
+    function simulateScenario(rAnn, salGrAnn, infAnn, expMult) {
+      const nw = [port0];
+      const incs = [inc0];
+      const exps = [exp0 * expMult];
+      const savs = [inc0 - exps[0]];
+      const port = [port0];
+      const cash = [0.0];
+
+      const rMon = Math.pow(1.0 + rAnn, 1.0/12.0) - 1.0;
+
+      for (let t = 1; t <= 60; t++) {
+        const yearIdx = Math.floor((t - 1) / 12);
+        const inc = inc0 * Math.pow(1.0 + salGrAnn, yearIdx);
+        const exp = (exp0 * expMult) * Math.pow(1.0 + infAnn, yearIdx);
+        const sav = inc - exp;
+        const sip = Math.max(0.0, sav * invRatio);
+
+        const pVal = port[t-1] * (1.0 + rMon) + sip;
+        const cVal = cash[t-1] + (sav - sip);
+
+        port.push(pVal);
+        cash.push(cVal);
+        nw.push(pVal + cVal);
+        incs.push(inc);
+        exps.push(exp);
+        savs.push(sav);
+      }
+
+      return {
+        net_worth: nw,
+        income: incs,
+        expenses: exps,
+        savings: savs,
+        savings_3m: nw[3],
+        savings_6m: nw[6],
+        savings_1y: nw[12],
+        savings_5y: nw[60],
+      };
+    }
+
+    const moderate = simulateScenario(modReturn / 100.0, salGrowth / 100.0, inflation / 100.0, 1.0);
+    const conservative = simulateScenario(0.06, Math.max(0.0, salGrowth - 2.0) / 100.0, (inflation + 1.0) / 100.0, 1.10);
+    const aggressive = simulateScenario((modReturn + 5.0) / 100.0, (salGrowth + 2.0) / 100.0, Math.max(0.0, inflation - 1.0) / 100.0, 0.85);
+
+    return {
+      conservative,
+      moderate,
+      aggressive,
+      current_savings: port0
+    };
+  }
+
+  // Update HTML KPIs and Sliders Text
+  function updateSimulation() {
+    const salGr = parseFloat(document.getElementById('sal-growth-slider').value);
+    const infl = parseFloat(document.getElementById('inflation-slider').value);
+    const retVal = parseFloat(document.getElementById('return-slider').value);
+
+    // Update slider tags
+    document.getElementById('sal-growth-val').innerText = salGr.toFixed(1) + '%';
+    document.getElementById('inflation-val').innerText = infl.toFixed(1) + '%';
+    document.getElementById('return-val').innerText = retVal.toFixed(1) + '%';
+
+    // Simulate!
+    activeForecast = runClientSimulation(salGr, infl, retVal);
+
+    // Update KPI Text Card values
+    const fmt = (v) => '₹' + Math.round(v).toLocaleString('en-IN');
+    
+    document.getElementById('kpi-3m').innerText = fmt(activeForecast.moderate.savings_3m);
+    document.getElementById('con-3m').innerText = fmt(activeForecast.conservative.savings_3m) + ' (C)';
+    document.getElementById('agg-3m').innerText = fmt(activeForecast.aggressive.savings_3m) + ' (A)';
+
+    document.getElementById('kpi-6m').innerText = fmt(activeForecast.moderate.savings_6m);
+    document.getElementById('con-6m').innerText = fmt(activeForecast.conservative.savings_6m) + ' (C)';
+    document.getElementById('agg-6m').innerText = fmt(activeForecast.aggressive.savings_6m) + ' (A)';
+
+    document.getElementById('kpi-1y').innerText = fmt(activeForecast.moderate.savings_1y);
+    document.getElementById('con-1y').innerText = fmt(activeForecast.conservative.savings_1y) + ' (C)';
+    document.getElementById('agg-1y').innerText = fmt(activeForecast.aggressive.savings_1y) + ' (A)';
+
+    document.getElementById('kpi-5y').innerText = fmt(activeForecast.moderate.savings_5y);
+    document.getElementById('con-5y').innerText = fmt(activeForecast.conservative.savings_5y) + ' (C)';
+    document.getElementById('agg-5y').innerText = fmt(activeForecast.aggressive.savings_5y) + ' (A)';
+
+    // Update Graphs
+    renderCharts();
+  }
+
+  // Set Chart periods
+  function setChartPeriod(m) {
+    currentPeriod = m;
+    
+    document.getElementById('toggle-1y-btn').classList.remove('active');
+    document.getElementById('toggle-1y-btn').style.background = 'transparent';
+    document.getElementById('toggle-1y-btn').style.color = '#8f9cae';
+    
+    document.getElementById('toggle-5y-btn').classList.remove('active');
+    document.getElementById('toggle-5y-btn').style.background = 'transparent';
+    document.getElementById('toggle-5y-btn').style.color = '#8f9cae';
+
+    if (m === 12) {
+      document.getElementById('toggle-1y-btn').classList.add('active');
+      document.getElementById('toggle-1y-btn').style.background = 'rgba(99,102,241,0.25)';
+      document.getElementById('toggle-1y-btn').style.color = '#fff';
+    } else {
+      document.getElementById('toggle-5y-btn').classList.add('active');
+      document.getElementById('toggle-5y-btn').style.background = 'rgba(99,102,241,0.25)';
+      document.getElementById('toggle-5y-btn').style.color = '#fff';
+    }
+
+    renderCharts();
+  }
+
+  // Render Chart.js projections
+  function renderCharts() {
+    const monthsLimit = currentPeriod;
+    const labels = [];
+    
+    for (let i = 0; i <= monthsLimit; i++) {
+      if (monthsLimit <= 12) {
+        labels.push('Month ' + i);
+      } else {
+        if (i % 12 === 0) labels.push('Yr ' + (i/12));
+        else labels.push('');
+      }
+    }
+
+    const netWorthCon = activeForecast.conservative.net_worth.slice(0, monthsLimit + 1);
+    const netWorthMod = activeForecast.moderate.net_worth.slice(0, monthsLimit + 1);
+    const netWorthAgg = activeForecast.aggressive.net_worth.slice(0, monthsLimit + 1);
+
+    // 1. Line Growth Chart
+    if (chartInstance) {
+      chartInstance.data.labels = labels;
+      chartInstance.data.datasets[0].data = netWorthCon;
+      chartInstance.data.datasets[1].data = netWorthMod;
+      chartInstance.data.datasets[2].data = netWorthAgg;
+      chartInstance.update();
+    } else {
+      const ctx = document.getElementById('growthChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Conservative (Worst)',
+              data: netWorthCon,
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.05)',
+              borderWidth: 2,
+              tension: 0.25,
+              fill: false
+            },
+            {
+              label: 'Expected (Moderate)',
+              data: netWorthMod,
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99, 102, 241, 0.15)',
+              borderWidth: 3,
+              tension: 0.25,
+              fill: true
+            },
+            {
+              label: 'Aggressive (Best)',
+              data: netWorthAgg,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.05)',
+              borderWidth: 2,
+              tension: 0.25,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#fff', font: { size: 11, weight: '500' } }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.03)' },
+              ticks: { color: '#8f9cae', font: { size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#8f9cae',
+                font: { size: 10 },
+                callback: function(value) {
+                  return '₹' + (value >= 100000 ? (value / 100000).toFixed(1) + 'L' : value.toLocaleString('en-IN'));
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 2. Bar Cash Flow Chart
+    const cashLabels = [];
+    for (let i = 1; i <= 12; i++) cashLabels.push('Month ' + i);
+    
+    const incMod = activeForecast.moderate.income.slice(1, 13);
+    const expMod = activeForecast.moderate.expenses.slice(1, 13);
+    const savMod = activeForecast.moderate.savings.slice(1, 13);
+
+    if (cashflowChartInstance) {
+      cashflowChartInstance.data.datasets[0].data = incMod;
+      cashflowChartInstance.data.datasets[1].data = expMod;
+      cashflowChartInstance.data.datasets[2].data = savMod;
+      cashflowChartInstance.update();
+    } else {
+      const ctxFlow = document.getElementById('cashflowChart').getContext('2d');
+      cashflowChartInstance = new Chart(ctxFlow, {
+        type: 'bar',
+        data: {
+          labels: cashLabels,
+          datasets: [
+            {
+              label: 'Projected Income',
+              data: incMod,
+              backgroundColor: 'rgba(99, 102, 241, 0.65)',
+              borderWidth: 0,
+              borderRadius: 4
+            },
+            {
+              label: 'Projected Expenses',
+              data: expMod,
+              backgroundColor: 'rgba(239, 68, 68, 0.65)',
+              borderWidth: 0,
+              borderRadius: 4
+            },
+            {
+              label: 'Remaining Net Savings',
+              data: savMod,
+              backgroundColor: 'rgba(16, 185, 129, 0.65)',
+              borderWidth: 0,
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#fff', font: { size: 10 } }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#8f9cae', font: { size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#8f9cae',
+                font: { size: 10 },
+                callback: function(v) {
+                  return '₹' + (v >= 100000 ? (v / 100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // Apply Parameter variables to page URL query parameters (which forces AI Advice reload)
+  function applyQueryParams() {
+    const salGr = document.getElementById('sal-growth-slider').value;
+    const infl = document.getElementById('inflation-slider').value;
+    const retVal = document.getElementById('return-slider').value;
+    window.location.href = `/savings-prediction?salary_growth=${salGr}&inflation=${infl}&moderate_return=${retVal}`;
+  }
+
+  // Save current projection configuration to History
+  async function saveCurrentProjection() {
+    const salGr = document.getElementById('sal-growth-slider').value;
+    const infl = document.getElementById('inflation-slider').value;
+    const retVal = document.getElementById('return-slider').value;
+    
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.disabled = true;
+    saveBtn.innerText = "Saving...";
+
+    const formData = new FormData();
+    formData.append('salary_growth', salGr);
+    formData.append('inflation', infl);
+    formData.append('moderate_return', retVal);
+
+    try {
+      const response = await fetch('/api/savings-prediction/save', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert("✅ " + data.message);
+        window.location.reload();
+      } else {
+        alert("❌ Failed to save: " + data.error);
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Save This Projection";
+      }
+    } catch(e) {
+      alert("❌ Communication error: " + e.message);
+      saveBtn.disabled = false;
+      saveBtn.innerText = "Save This Projection";
+    }
+  }
+
+  // Initial draw
+  window.addEventListener('DOMContentLoaded', () => {
+    renderCharts();
+  });
+</script>
+
+<style>
+  .chart-tab {
+    transition: all 0.2s ease;
+  }
+  .chart-tab:hover {
+    color: #fff !important;
+  }
+  /* Slider premium styles */
+  input[type=range] {
+    height: 6px;
+    -webkit-appearance: none;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+    transition: transform 0.1s ease;
+  }
+  input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+</style>
+{% endblock %}

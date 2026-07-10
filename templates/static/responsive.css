@@ -1,0 +1,247 @@
+/* WalletIQ — Responsive layer (mobile-first) */
+
+:root {
+  --topbar-h: 56px;
+  --bottomnav-h: 62px;
+  --content-max: 1320px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+/* Fluid typography */
+.page-title { font-size: clamp(1.35rem, 2.2vw + 0.5rem, 1.75rem); }
+.page-subtitle { font-size: clamp(0.8125rem, 1vw + 0.5rem, 0.875rem); }
+.stat-value { font-size: clamp(1.2rem, 1.8vw + 0.4rem, 1.625rem); }
+
+.main-inner {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  min-width: 0;
+}
+
+/* Prevent grid/flex overflow */
+.card, .stat-card, .dash-grid > *, .chat-panel { min-width: 0; }
+
+/* Charts */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+.chart-wrap canvas {
+  display: block;
+  max-width: 100%;
+}
+
+/* ── Mobile top bar ── */
+.mobile-topbar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--topbar-h) + var(--safe-top));
+  padding-top: var(--safe-top);
+  z-index: 250;
+  background: rgba(20, 20, 32, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding-left: max(16px, var(--safe-left));
+  padding-right: max(16px, var(--safe-right));
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-topbar .brand-mark { flex: 1; min-width: 0; }
+
+.menu-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.menu-btn:active { transform: scale(0.96); }
+
+/* ── Sidebar drawer ── */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Bottom nav ── */
+.mobile-bottomnav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 240;
+  height: calc(var(--bottomnav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  background: rgba(20, 20, 32, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.mobile-bottomnav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-decoration: none;
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 8px 4px;
+  min-width: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-bottomnav a .bn-icon { font-size: 18px; line-height: 1; }
+.mobile-bottomnav a.active { color: var(--gold2); }
+
+/* ── Layout helpers ── */
+.page-header { flex-wrap: wrap; gap: 12px 16px; }
+.page-actions { flex-wrap: wrap; gap: 8px; }
+.stat-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.stat-card { height: auto; min-height: 110px; padding: 18px 20px; }
+.card-header { flex-wrap: wrap; gap: 10px; }
+.table-wrap {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Modals — sheet on mobile */
+.modal-overlay { padding: 12px; align-items: flex-end; }
+.modal {
+  max-height: 90dvh;
+  overflow-y: auto;
+  width: 100%;
+  border-radius: var(--radius-xl) var(--radius-xl) 12px 12px;
+}
+
+@media (min-width: 640px) {
+  .modal-overlay { align-items: center; padding: 24px; }
+  .modal { border-radius: var(--radius-xl); max-width: min(520px, 100%); }
+}
+
+.toast-stack {
+  left: 16px;
+  right: 16px;
+  bottom: calc(16px + var(--safe-bottom));
+}
+
+.toast { max-width: min(300px, calc(100vw - 32px)); }
+
+/* ── Tablet & mobile (≤1024px) ── */
+@media (max-width: 1024px) {
+  .mobile-topbar { display: flex; }
+  .mobile-bottomnav { display: grid; }
+  .sidebar-backdrop { display: block; }
+
+  .sidebar {
+    display: flex !important;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
+    width: min(280px, 85vw);
+    top: 0;
+    height: 100dvh;
+    padding-top: var(--safe-top);
+  }
+
+  .sidebar.open { transform: translateX(0); }
+
+  .main-content {
+    margin-left: 0 !important;
+    max-width: 100% !important;
+    padding: calc(var(--topbar-h) + var(--safe-top) + 16px) 16px calc(var(--bottomnav-h) + 20px + var(--safe-bottom)) !important;
+  }
+
+  .toast-stack {
+    bottom: calc(var(--bottomnav-h) + 16px + var(--safe-bottom));
+  }
+
+  .page-actions { width: 100%; }
+}
+
+/* ── Large phones (≤767px) ── */
+@media (max-width: 767px) {
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card { min-height: 96px; padding: 16px; }
+  .stat-icon-corner { display: none; }
+  .card-body { padding: 16px; }
+  .card-header { padding: 14px 16px; }
+  .form-2col, .form-3col, .form-4col { grid-template-columns: 1fr !important; }
+
+  .page-header-left { min-width: 0; }
+  .page-subtitle { max-width: 100%; }
+
+  .btn-sm { min-height: 36px; }
+}
+
+/* ── Small phones (≤480px) ── */
+@media (max-width: 480px) {
+  .stat-grid { grid-template-columns: 1fr; }
+  .main-content { padding-left: 12px !important; padding-right: 12px !important; }
+  .page-actions .btn { width: 100%; justify-content: center; }
+}
+
+/* ── Laptops (1025px+) ── */
+@media (min-width: 1025px) {
+  .main-content { padding: 36px clamp(24px, 3vw, 48px) !important; }
+}
+
+/* ── Large desktop ── */
+@media (min-width: 1441px) { :root { --content-max: 1400px; } }
+@media (min-width: 1920px) { :root { --content-max: 1520px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .sidebar-backdrop, .main-content, .toast, .modal, .menu-btn {
+    transition: none !important;
+    animation: none !important;
+  }
+}

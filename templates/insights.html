@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}AI Spending Insights — WalletIQ{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+  <div class="page-header-left">
+    <h1 class="page-title">📊 AI Spending Insights</h1>
+    <p class="page-subtitle">Understand your spending patterns and detect potential optimization waste.</p>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <!-- Key Insights -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">🤖 AI Anomaly & Pattern Analysis</h3>
+    </div>
+    <div class="card-body" id="insightsContainer">
+      <p style="color: var(--text3);">Loading insights...</p>
+    </div>
+  </div>
+
+  <!-- Subscriptions Tracker -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">⚠️ Detected Subscriptions & Repeating Drafts</h3>
+    </div>
+    <div class="card-body" id="subsContainer">
+      <p style="color: var(--text3);">Checking for repeat payments...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Opportunity cards -->
+<div class="card" style="margin-top: 24px;">
+  <div class="card-header">
+    <h3 class="card-title">💡 Instant Savings Opportunities</h3>
+  </div>
+  <div class="card-body">
+    <div class="grid grid-3" id="recosGrid">
+      <!-- Recommendations will be injected dynamically -->
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  loadInsights();
+  loadRecommendations();
+});
+
+async function loadInsights() {
+  const res = await fetch('/api/spending-insights');
+  const d = await res.json();
+  if (d.ok && d.insights) {
+    const data = d.insights;
+    document.getElementById('insightsContainer').innerHTML = `
+      <div style="font-size: 14px; line-height: 1.65; color: var(--text2);">
+        <p>• Total spent this month: <strong>₹${data.total_this_month.toLocaleString()}</strong> (${data.percentage_change}% change vs last month).</p>
+        <p style="margin-top: 10px;">• Fastest growing category: <strong>${data.fastest_growing_category}</strong> (+${data.fastest_growing_percentage}% growth).</p>
+        <p style="margin-top: 10px;">• Average weekend spent: <strong>₹${data.average_weekend.toLocaleString()}</strong> vs weekday average <strong>₹${data.average_weekday.toLocaleString()}</strong>.</p>
+      </div>
+    `;
+
+    const subContainer = document.getElementById('subsContainer');
+    if (data.suspected_subscriptions.length > 0) {
+      subContainer.innerHTML = '<ul style="padding-left: 20px;">';
+      data.suspected_subscriptions.forEach(sub => {
+        subContainer.innerHTML += `<li style="margin-bottom: 10px; font-size: 13.5px;"><strong>${sub.title}</strong>: ₹${sub.amount.toLocaleString()} (${sub.frequency})</li>`;
+      });
+      subContainer.innerHTML += '</ul>';
+    } else {
+      subContainer.innerHTML = '<p style="color: var(--text3);">No suspicious subscription loops detected this month.</p>';
+    }
+  }
+}
+
+async function loadRecommendations() {
+  const res = await fetch('/api/recommendations');
+  const d = await res.json();
+  if (d.ok && d.recommendations.length > 0) {
+    const grid = document.getElementById('recosGrid');
+    grid.innerHTML = '';
+    d.recommendations.forEach(r => {
+      grid.innerHTML += `
+        <div class="card" style="background: var(--gold-glow); border-color: rgba(200,169,110,0.2);">
+          <div class="card-body">
+            <span style="font-size: 10px; text-transform: uppercase; color: var(--gold); font-weight: 600;">${r.category}</span>
+            <p style="font-size: 13.5px; margin: 8px 0; color: var(--text);">${r.message}</p>
+            <span style="font-size: 12px; color: var(--green);">Estimated Savings: ₹${r.potential_savings.toLocaleString()}</span>
+          </div>
+        </div>
+      `;
+    });
+  }
+}
+</script>
+{% endblock %}

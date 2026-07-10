@@ -1,0 +1,543 @@
+{% extends "base.html" %}
+{% block title %}Financial Health — WalletIQ{% endblock %}
+
+{% block extra_style %}
+/* ── SCORE INDICATOR ── */
+.health-overview-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 30px;
+  display: grid;
+  grid-template-columns: 1.2fr 2fr;
+  gap: 30px;
+  margin-bottom: 28px;
+  align-items: center;
+  position: relative;
+}
+.health-overview-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 150px; height: 150px;
+  border-radius: 0 var(--radius-xl) 0 150px;
+  opacity: 0.03;
+  pointer-events: none;
+}
+.score-circle-wrap {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+}
+.score-circle-bg {
+  fill: none;
+  stroke: var(--surface3);
+  stroke-width: 12;
+}
+.score-circle-fill {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.score-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+}
+.score-num {
+  font-size: 46px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.score-total {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+.score-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 14px;
+}
+.score-desc {
+  font-size: 13.5px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-top: 12px;
+}
+
+/* ── KPI GRID ── */
+.health-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: transform 0.2s, border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 125px;
+}
+.kpi-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--border2);
+}
+.kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+}
+.kpi-badge {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: auto;
+}
+.kpi-num {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+.kpi-pct {
+  font-size: 12.5px;
+  color: var(--text2);
+}
+
+/* ── COMPARISON METERS ── */
+.comparison-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 28px;
+}
+.comp-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 18px;
+}
+.comp-col {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.comp-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.comp-val {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* ── RECOMMENDATIONS ── */
+.ai-recommendations-box {
+  background: radial-gradient(ellipse at 80% 10%, rgba(200,169,110,0.06) 0%, var(--surface) 80%);
+  border: 1px solid rgba(200,169,110,0.18);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.ai-box-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.ai-sparkle {
+  font-size: 20px;
+  color: var(--gold);
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+.ai-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--gold2);
+}
+.suggestion-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.suggestion-card {
+  background: rgba(26,26,40,0.45);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.suggestion-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(200,169,110,0.15);
+}
+.suggestion-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.suggestion-text {
+  font-size: 13.5px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+/* ── INCOME EDIT WIDGET ── */
+.income-widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  margin-bottom: 28px;
+}
+
+/* ── RESPONSIVE OVERRIDES ── */
+@media (max-width: 1024px) {
+  .health-overview-card { grid-template-columns: 1fr; gap: 24px; text-align: center; }
+  .health-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .suggestion-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 767px) {
+  .health-kpi-grid { grid-template-columns: 1fr; }
+  .comp-row { grid-template-columns: 1fr; gap: 12px; }
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(1); opacity: 0.8; filter: drop-shadow(0 0 2px rgba(200,169,110,0.3)); }
+  50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 8px rgba(200,169,110,0.6)); }
+  100% { transform: scale(1); opacity: 0.8; filter: drop-shadow(0 0 2px rgba(200,169,110,0.3)); }
+}
+{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-eyebrow">{{ now.strftime('%A, %d %B %Y') }}</div>
+    <div class="page-title">{% if lang=='ta' %}நிதி ஆரோக்கியம்{% else %}AI Financial Health{% endif %}</div>
+    <div class="page-subtitle">
+      {% if lang=='ta' %}செயற்கை நுண்ணறிவு உந்துதல் நிதி பகுப்பாய்வு{% else %}AI-powered diagnostics and recommendations for your finances{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Score Status Styles -->
+{% set sc = stats.score %}
+{% if sc >= 90 %}
+  {% set color = 'var(--green)' %}
+  {% set status_icon = '🟢' %}
+  {% set text_class = 'green' %}
+  {% set score_desc_text = "Outstanding financial behavior! You are optimizing your cash flows, budgeting efficiently, and maintaining healthy savings. Keep up this disciplined path." %}
+{% elif sc >= 75 %}
+  {% set color = 'var(--blue)' %}
+  {% set status_icon = '🔵' %}
+  {% set text_class = 'blue' %}
+  {% set score_desc_text = "Good financial condition. You are saving and investing regularly, but there's still minor room for improvement in budget adherence or emergency savings." %}
+{% elif sc >= 60 %}
+  {% set color = 'var(--gold)' %}
+  {% set status_icon = '🟡' %}
+  {% set text_class = 'gold' %}
+  {% set score_desc_text = "Average standing. Your expenses are eating up a significant portion of your income, and you need tighter budgeting rules to step up your savings rate." %}
+{% elif sc >= 40 %}
+  {% set color = '#ff9f40' %}
+  {% set status_icon = '🟠' %}
+  {% set text_class = 'orange' %}
+  {% set score_desc_text = "Needs Improvement. High expenditure, lack of active investments, or low emergency buffer is placing strain on your stability. Review the recommendations below." %}
+{% else %}
+  {% set color = 'var(--red)' %}
+  {% set status_icon = '🔴' %}
+  {% set text_class = 'red' %}
+  {% set score_desc_text = "Critical health. You are overspending beyond safe limits, or have substantial EMIs compared to your income. Urgent budgeting discipline is recommended." %}
+{% endif %}
+
+<!-- Financial Health Score Card -->
+<div class="health-overview-card">
+  <div>
+    <div class="score-circle-wrap">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle class="score-circle-bg" cx="90" cy="90" r="75"></circle>
+        <circle class="score-circle-fill" cx="90" cy="90" r="75" 
+          stroke="{{ color }}"
+          stroke-dasharray="471.2"
+          stroke-dashoffset="471.2"
+          id="scoreCircle">
+        </circle>
+      </svg>
+      <div class="score-value">
+        <div class="score-num" style="color: {{ color }}">{{ stats.score }}</div>
+        <div class="score-total">/ 100</div>
+      </div>
+    </div>
+  </div>
+  
+  <div>
+    <div class="score-status-badge" style="color: {{ color }}">
+      <span>{{ status_icon }}</span>
+      <span>{{ stats.status }}</span>
+    </div>
+    <div class="score-desc">
+      {% if lang=='ta' %}
+        உங்களின் தற்போதைய நிதி ஆரோக்கிய நிலை: <strong>{{ stats.status }}</strong>. 
+        நாங்கள் கணக்கிட்ட மொத்த சேமிப்பு மற்றும் பட்ஜெட் விதிகளை அடிப்படையாகக் கொண்டு இந்த அறிக்கை தயாரிக்கப்பட்டுள்ளது.
+      {% else %}
+        {{ score_desc_text }}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Comparison meters -->
+<div class="comparison-card">
+  <div class="card-title">{% if lang=='ta' %}மாதாந்திர வரவு-செலவு ஒப்பிடுதல்{% else %}Monthly Cash Flow Summary{% endif %}</div>
+  <div class="comp-row">
+    <div class="comp-col" style="border-left: 3px solid var(--blue)">
+      <div class="comp-label">Monthly Income</div>
+      <div class="comp-val text-blue">₹{{ "{:,.2f}".format(stats.income) }}</div>
+    </div>
+    <div class="comp-col" style="border-left: 3px solid var(--red)">
+      <div class="comp-label">Expenses Spent</div>
+      <div class="comp-val text-red">₹{{ "{:,.2f}".format(stats.expenses) }}</div>
+    </div>
+    <div class="comp-col" style="border-left: 3px solid var(--green)">
+      <div class="comp-label">Savings Remaining</div>
+      <div class="comp-val text-green">₹{{ "{:,.2f}".format(stats.savings) }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Recommendations Box -->
+<div class="ai-recommendations-box">
+  <div class="ai-box-header">
+    <span class="ai-sparkle">✦</span>
+    <div class="ai-title">{% if lang=='ta' %}AI நிதி ஆலோசனைகள்{% else %}AI Financial Recommendations{% endif %}</div>
+  </div>
+  
+  <div class="suggestion-grid">
+    {% set icons = ['💡', '📈', '🛡️', '🎯'] %}
+    {% for rec in recommendations %}
+      <div class="suggestion-card">
+        <span class="suggestion-icon">{{ icons[loop.index0 % 4] }}</span>
+        <div class="suggestion-text">{{ rec }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- KPI breakdown grid -->
+<div class="health-kpi-grid">
+  <!-- Savings Rate -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">Savings Rate</span>
+      <span class="kpi-badge" style="background: var(--green-dim); color: var(--green)">Score: {{ stats.savings_score }}</span>
+    </div>
+    <div class="kpi-value-row">
+      <div class="kpi-num">{{ stats.savings_rate }}%</div>
+      <div class="kpi-pct">Target: 40%</div>
+    </div>
+  </div>
+
+  <!-- Expense Ratio -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">Expense Control</span>
+      <span class="kpi-badge" style="background: var(--blue-dim); color: var(--blue)">Score: {{ stats.expense_score }}</span>
+    </div>
+    <div class="kpi-value-row">
+      <div class="kpi-num">{{ stats.expense_ratio }}%</div>
+      <div class="kpi-pct">Target: &lt;= 50%</div>
+    </div>
+  </div>
+
+  <!-- Investment Ratio -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">Investment Ratio</span>
+      <span class="kpi-badge" style="background: var(--gold-dim); color: var(--gold)">Score: {{ stats.investment_score }}</span>
+    </div>
+    <div class="kpi-value-row">
+      <div class="kpi-num">{{ stats.investment_ratio }}%</div>
+      <div class="kpi-pct">Target: 20%</div>
+    </div>
+  </div>
+
+  <!-- Budget Score -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">Budget Adherence</span>
+      <span class="kpi-badge" style="background: var(--purple-dim); color: var(--purple)">Score: {{ stats.budget_score }}</span>
+    </div>
+    <div class="kpi-value-row">
+      <div class="kpi-num">{{ stats.budget_score }}</div>
+      <div class="kpi-pct">Target: 100</div>
+    </div>
+  </div>
+
+  <!-- Emergency Fund -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">Emergency Fund</span>
+      <span class="kpi-badge" style="background: var(--green-dim); color: var(--green)">Score: {{ stats.emergency_fund_score }}</span>
+    </div>
+    <div class="kpi-value-row">
+      <div class="kpi-num">{{ stats.months_covered }} mo</div>
+      <div class="kpi-pct">Target: 6 mo</div>
+    </div>
+  </div>
+
+  <!-- Debt Ratio -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">Debt (EMI) Ratio</span>
+      <span class="kpi-badge" style="background: var(--red-dim); color: var(--red)">Score: {{ stats.debt_score }}</span>
+    </div>
+    <div class="kpi-value-row">
+      <div class="kpi-num">{{ stats.debt_ratio }}%</div>
+      <div class="kpi-pct">Target: &lt;= 20%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Trend Chart & Quick Settings -->
+<div class="dash-grid">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">{% if lang=='ta' %}சுகாதார குறியீடு போக்கு{% else %}Financial Health Trend{% endif %}</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrap"><canvas id="healthTrendChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Quick Income Setup -->
+  <div class="kpi-card" style="justify-content: flex-start; height: auto;">
+    <div class="card-title" style="margin-bottom: 16px;">{% if lang=='ta' %}வருமான அமைப்புகள்{% else %}Adjust Monthly Income{% endif %}</div>
+    <p style="font-size: 13px; color: var(--text3); line-height: 1.5; margin-bottom: 20px;">
+      Your financial health calculations (Savings, Debt, and Investment ratios) depend directly on your monthly income setting.
+    </p>
+    <form action="/financial-health/update-income" method="POST">
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label">Monthly Income ₹</label>
+        <input class="form-control" type="number" name="monthly_income" value="{{ current_user.monthly_income or 50000.0 }}" required style="font-family: var(--font-mono); border-radius: 10px;">
+      </div>
+      <button type="submit" class="btn btn-primary" style="border-radius: 10px; height: 42px; justify-content: center; width: 100%;">
+        Recalculate Health Score
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Animated Circular Gauge
+document.addEventListener("DOMContentLoaded", () => {
+  const circle = document.getElementById("scoreCircle");
+  const score = {{ stats.score }};
+  const radius = 75;
+  const circumference = 2 * Math.PI * radius; // 471.2
+  const offset = circumference - (score / 100) * circumference;
+  
+  setTimeout(() => {
+    circle.style.strokeDashoffset = offset;
+  }, 100);
+});
+
+// Trend Chart.js
+const trendLabels = {{ trend_keys|tojson }};
+const trendValues = {{ trend_vals|tojson }};
+
+const TIP_OPTS_HEALTH = {
+  backgroundColor:'#1A1A28',
+  borderColor:'rgba(255,255,255,0.08)',
+  borderWidth:1,
+  titleColor:'#F0EEE6',
+  bodyColor:'#A8A49C',
+  padding:10,
+  cornerRadius:8,
+};
+
+new Chart(document.getElementById('healthTrendChart'), {
+  type:'line',
+  data:{
+    labels: trendLabels.length ? trendLabels : ['—'],
+    datasets:[{
+      data: trendValues.length ? trendValues : [0],
+      borderColor: '{{ color }}',
+      backgroundColor: 'rgba(200,169,110,0.03)',
+      fill: true,
+      tension: 0.35,
+      pointBackgroundColor: '{{ color }}',
+      pointRadius: 4,
+      pointHoverRadius: 7,
+      borderWidth: 2.5
+    }]
+  },
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{...TIP_OPTS_HEALTH, callbacks:{label:c=>' Score: '+c.raw}}
+    },
+    scales:{
+      x:{grid:{display:false}, ticks:{color:'#6B6760'}},
+      y:{
+        grid:{color:'rgba(255,255,255,0.04)'},
+        ticks:{color:'#6B6760', stepSize: 20},
+        min: 0,
+        max: 100,
+        border:{display:false}
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if lang=='ta' %}கடன் தகுதி கணிப்பு{% else %}Loan Eligibility{% endif %} - WalletIQ
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="padding: 24px; max-width: 1200px; margin: 0 auto; font-family: var(--font-sans, 'Inter', sans-serif);">
+
+  <!-- Page Header -->
+  <div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 style="font-size: 28px; font-weight: 700; color: #fff; margin: 0 0 6px 0; background: linear-gradient(135deg, #fff 30%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        {% if lang=='ta' %}AI கடன் தகுதி கணிப்பான்{% else %}AI Loan Eligibility Predictor{% endif %}
+      </h1>
+      <p style="font-size: 14px; color: var(--text-dim, #8f9cae); margin: 0;">
+        {% if lang=='ta' %}இயந்திர கற்றல் (ML) அடிப்படையிலான கடன் ஒப்புதல் சாத்தியக்கூறுகள் மற்றும் மதிப்பீடுகள்.{% else %}Machine Learning (ML) based evaluation of your loan approval probability and borrowing capacity.{% endif %}
+      </p>
+    </div>
+    
+    <!-- Action Save Button -->
+    <button type="button" class="btn btn-primary" onclick="submitLoanEvaluation()" id="eval-btn" style="padding: 10px 20px; font-size: 14px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-weight: 600; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); border: none;">
+      <span>🔍</span> {% if lang=='ta' %}தகுதியைச் சேமிக்கவும்{% else %}Save & Log Evaluation{% endif %}
+    </button>
+  </div>
+
+  <div class="row" style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 20px;">
+    
+    <!-- Left Column: Inputs & EMI Calculator -->
+    <div style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- Input Parameters Widget -->
+      <div class="card" style="padding: 22px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+        <h3 style="font-size: 18px; color: #fff; margin: 0 0 20px; display: flex; align-items: center; gap: 10px; font-weight: 600;">
+          <span style="font-size: 20px;">📝</span> {% if lang=='ta' %}கடன் விண்ணப்ப விவரங்கள்{% else %}Loan Application Details{% endif %}
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- Parameter 1: Requested Loan Amount -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #fff; margin-bottom: 8px; font-weight: 500;">
+              <span>💰 {% if lang=='ta' %}தேவைப்படும் கடன் தொகை{% else %}Requested Loan Amount{% endif %}</span>
+              <span id="amount-val" style="color: #f472b6; font-weight: bold; font-family: var(--font-mono)">₹{{ "{:,.0f}".format(result.requested_amount) }}</span>
+            </div>
+            <input type="range" id="amount-slider" min="50000" max="2000000" value="{{ result.requested_amount }}" step="10000" style="width: 100%; accent-color: #ec4899;" oninput="updateSimulation()">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #5f748d; margin-top: 4px;">
+              <span>₹50K</span>
+              <span>₹20L</span>
+            </div>
+          </div>
+
+          <!-- Parameter 2: Loan Tenure (Months) -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #fff; margin-bottom: 8px; font-weight: 500;">
+              <span>📅 {% if lang=='ta' %}கடன் காலம் (மாதங்கள்){% else %}Loan Tenure (Months){% endif %}</span>
+              <span id="tenure-val" style="color: #f472b6; font-weight: bold; font-family: var(--font-mono)">{{ result.tenure_months }} months</span>
+            </div>
+            <input type="range" id="tenure-slider" min="12" max="120" value="{{ result.tenure_months }}" step="12" style="width: 100%; accent-color: #ec4899;" oninput="updateSimulation()">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #5f748d; margin-top: 4px;">
+              <span>12 months (1 Yr)</span>
+              <span>120 months (10 Yrs)</span>
+            </div>
+          </div>
+
+          <!-- Parameter 3: Credit Score -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #fff; margin-bottom: 8px; font-weight: 500;">
+              <span>💳 {% if lang=='ta' %}சிபில் (Credit) ஸ்கோர்{% else %}Credit Score (CIBIL){% endif %}</span>
+              <span id="credit-val" style="color: #60a5fa; font-weight: bold; font-family: var(--font-mono)">{{ result.credit_score }}</span>
+            </div>
+            <input type="range" id="credit-slider" min="300" max="900" value="{{ result.credit_score }}" step="5" style="width: 100%; accent-color: #3b82f6;" oninput="updateSimulation()">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #5f748d; margin-top: 4px;">
+              <span>300 (Poor)</span>
+              <span>900 (Excellent)</span>
+            </div>
+          </div>
+
+          <!-- Parameter 4: Employment Status -->
+          <div>
+            <label style="font-size: 14px; color: #fff; display: block; margin-bottom: 8px; font-weight: 500;">💼 {% if lang=='ta' %}வேலைவாய்ப்பு நிலை{% else %}Employment Status{% endif %}</label>
+            <select id="employment-select" onchange="updateSimulation()" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); color: #fff; outline: none; font-size: 13.5px;">
+              <option value="1" {% if result.employment_status == 1 %}selected{% endif %}>{% if lang=='ta' %}மாதச் சம்பளம் / சுயதொழில்{% else %}Salaried / Self-Employed{% endif %}</option>
+              <option value="0" {% if result.employment_status == 0 %}selected{% endif %}>{% if lang=='ta' %}வேலையின்மை{% else %}Unemployed{% endif %}</option>
+            </select>
+          </div>
+        </div>
+        
+        <button type="button" class="btn" style="width: 100%; margin-top: 24px; padding: 11px; background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.4); color: #f472b6; border-radius: 8px; font-weight: 600; cursor: pointer;" onclick="applyQueryParams()">
+          🔄 {% if lang=='ta' %}அளவுகளைப் புதுப்பிக்கவும்{% else %}Sync AI suggestions{% endif %}
+        </button>
+      </div>
+
+      <!-- Recommendation panel -->
+      <div class="card" style="padding: 22px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+        <h3 style="font-size: 18px; color: #fff; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; font-weight: 600;">
+          <span style="font-size: 20px;">💡</span> {% if lang=='ta' %}ஒப்புதல் சாத்தியத்தை உயர்த்த வழிகள்{% else %}Suggestions to Improve Eligibility{% endif %}
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;" id="suggestions-container">
+          {% for s in result.suggestions %}
+            <div style="display: flex; align-items: flex-start; gap: 10px; background: rgba(15, 23, 42, 0.35); padding: 12px; border-radius: 10px; border-left: 3px solid #ec4899;">
+              <p style="font-size: 13px; color: #e2e8f0; margin: 0; line-height: 1.45;">{{ s }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Right Column: Predict Results & Meters -->
+    <div style="flex: 2 2 680px; display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- Main Predict Metrics Card -->
+      <div class="card" style="padding: 24px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); display: flex; flex-direction: row; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-around;">
+        
+        <!-- Gauge visualization -->
+        <div style="text-align: center; position: relative; width: 180px; height: 180px;">
+          <!-- SVG Circular Progress -->
+          <svg width="180" height="180" viewBox="0 0 180 180" style="transform: rotate(-90deg);">
+            <!-- Background circle -->
+            <circle cx="90" cy="90" r="76" stroke="rgba(255,255,255,0.05)" stroke-width="12" fill="transparent"/>
+            <!-- Foreground circle -->
+            <circle id="gauge-circle" cx="90" cy="90" r="76" stroke="#ec4899" stroke-width="12" fill="transparent" 
+                    stroke-dasharray="477.5" stroke-dashoffset="150" stroke-linecap="round" style="transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;"/>
+          </svg>
+          <!-- Score text overlay -->
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+            <div id="gauge-pct" style="font-size: 32px; font-weight: 800; color: #fff; font-family: var(--font-mono)">{{ result.approval_probability }}%</div>
+            <div style="font-size: 11px; color: var(--text-dim, #8f9cae); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+              {% if lang=='ta' %}ஒப்புதல் சாத்தியம்{% else %}Approval Prob{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics KPIs details -->
+        <div style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+            <span style="font-size: 14px; color: var(--text-dim, #8f9cae)">{% if lang=='ta' %}கடன் ஒப்புதல் தகுதி நிலை{% else %}Eligibility Status{% endif %}</span>
+            <span id="badge-eligible" style="font-size: 13.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: rgba(16, 185, 129, 0.15); color: #10b981;">
+              {% if result.is_eligible %}{% if lang=='ta' %}தகுதி உடையது{% else %}Eligible{% endif %}{% else %}{% if lang=='ta' %}தகுதியற்றது{% else %}Not Eligible{% endif %}{% endif %}
+            </span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+            <span style="font-size: 14px; color: var(--text-dim, #8f9cae)">{% if lang=='ta' %}பரிந்துரைக்கப்படும் அதிகபட்ச கடன்{% else %}Max Borrowing Limit{% endif %}</span>
+            <span id="val-max-loan" style="font-size: 17px; font-weight: bold; color: #fff; font-family: var(--font-mono)">
+              ₹{{ "{:,.0f}".format(result.eligible_amount) }}
+            </span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+            <span style="font-size: 14px; color: var(--text-dim, #8f9cae)">{% if lang=='ta' %}மதிப்பிடப்பட்ட மாதாந்திர தவணை (EMI){% else %}Estimated EMI{% endif %}</span>
+            <span id="val-emi" style="font-size: 17px; font-weight: bold; color: #fff; font-family: var(--font-mono)">
+              ₹{{ "{:,.0f}".format(result.estimated_emi) }}/mo
+            </span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+            <span style="font-size: 14px; color: var(--text-dim, #8f9cae)">{% if lang=='ta' %}கடன்-வருமான விகிதம் (DTI){% else %}Debt-to-Income (DTI) Ratio{% endif %}</span>
+            <span id="val-dti" style="font-size: 15px; font-weight: 600; color: #fff; font-family: var(--font-mono)">
+              {{ result.debt_to_income }}%
+            </span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text-dim, #8f9cae)">{% if lang=='ta' %}நிதி ஆபத்து நிலை{% else %}Risk Assessment{% endif %}</span>
+            <span id="badge-risk" style="font-size: 13.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: rgba(16, 185, 129, 0.15); color: #10b981;">
+              {{ result.risk_level }}
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Comparison Metrics Chart -->
+      <div class="card" style="padding: 22px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+        <h3 style="font-size: 18px; color: #fff; margin: 0 0 20px; font-weight: 600;">
+          📊 {% if lang=='ta' %}கடன் தகுதி காரணி ஒப்பீடு (%).{% else %}Loan Eligibility Factor Analysis (% Impact){% endif %}
+        </h3>
+        <div style="height: 250px; position: relative;">
+          <canvas id="factorChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Past saved history log -->
+      {% if saved_runs %}
+      <div class="card" style="padding: 22px; border-radius: 16px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+        <h3 style="font-size: 18px; color: #fff; margin: 0 0 16px; font-weight: 600;">
+          📜 {% if lang=='ta' %}கடந்த கடன் தகுதி தேடல்கள்{% else %}Loan Evaluation Log History{% endif %}
+        </h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--text-dim, #8f9cae); font-weight: 600;">
+                <th style="padding: 10px 8px;">Date</th>
+                <th style="padding: 10px 8px;">Requested</th>
+                <th style="padding: 10px 8px;">Tenure</th>
+                <th style="padding: 10px 8px; text-align: center;">Score</th>
+                <th style="padding: 10px 8px; text-align: right;">Max Limit</th>
+                <th style="padding: 10px 8px; text-align: center;">Risk</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in saved_runs %}
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); color: #fff;">
+                <td style="padding: 10px 8px; color: #5f748d;">{{ s.created_at }}</td>
+                <td style="padding: 10px 8px; font-family: var(--font-mono);">₹{{ "{:,.0f}".format(s.requested_amount) }}</td>
+                <td style="padding: 10px 8px;">{{ s.tenure_months }} mo</td>
+                <td style="padding: 10px 8px; text-align: center; font-weight: 600; color: #f472b6; font-family: var(--font-mono);">{{ s.approval_probability }}%</td>
+                <td style="padding: 10px 8px; text-align: right; font-weight: 600; color: #fff; font-family: var(--font-mono);">₹{{ "{:,.0f}".format(s.eligible_amount) }}</td>
+                <td style="padding: 10px 8px; text-align: center;">
+                  <span style="font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+                               background: {% if s.risk_level=='Low' %}rgba(16,185,129,0.15){% elif s.risk_level=='Medium' %}rgba(245,158,11,0.15){% else %}rgba(239,68,68,0.15){% endif %};
+                               color: {% if s.risk_level=='Low' %}#10b981{% elif s.risk_level=='Medium' %}#f59e0b{% else %}#ef4444{% endif %};">
+                    {{ s.risk_level }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Load values from backend
+  const userIncome = {{ result.requested_amount > 0 and (result.eligible_amount / ( (result.estimated_emi > 0) ? (result.eligible_amount / result.estimated_emi) : 60 )) or 50000.0 }}; // estimated
+  // Actually we can read properties directly from result dictionary or simulate them
+  const maxLimitBase = {{ result.eligible_amount }};
+  
+  let chartInstance = null;
+
+  // client-side simulation formula matching loan_prediction.py
+  function simulateEligibility(amount, tenure, creditScore, empStatus) {
+    const inc = 50000.0; // average fallback
+    const exp = 30000.0;
+    const debt = 0.0;
+    const sav = inc - exp;
+
+    const reqEmi = (amount * (1.0 + 0.10 * (tenure / 12.0))) / tenure;
+    const dti = ((debt + reqEmi) / inc) * 100.0;
+
+    // Simulation score
+    let score = 0.0;
+    if (creditScore >= 750) score += 0.4;
+    else if (creditScore >= 650) score += 0.2;
+
+    if (dti <= 35.0) score += 0.4;
+    else if (dti <= 45.0) score += 0.2;
+
+    if (sav / inc >= 0.20) score += 0.2;
+    if (empStatus === 1) score += 0.1;
+    else score -= 0.35;
+
+    // approval probability mapping
+    let approvalProb = Math.min(100.0, Math.max(0.0, score * 100.0));
+    if (creditScore < 580 || dti > 50.0 || empStatus === 0) {
+      approvalProb = Math.min(approvalProb, 25.0); // severe penalty
+    }
+
+    // Limit calculation
+    const maxEmiCapacity = Math.max(0.0, (inc * 0.45) - debt);
+    let maxLoan = (maxEmiCapacity * tenure) / (1.0 + 0.10 * (tenure / 12.0));
+    maxLoan = Math.round(maxLoan / 10000.0) * 10000.0;
+
+    const isEligible = (approvalProb >= 50.0 && amount <= maxLoan && empStatus === 1);
+
+    // Risk mapping
+    let risk = 'Low';
+    if (creditScore < 650 || dti > 45.0 || approvalProb < 40.0 || empStatus === 0) risk = 'High';
+    else if (creditScore < 720 || dti > 35.0 || approvalProb < 70.0) risk = 'Medium';
+
+    return {
+      is_eligible: isEligible,
+      approval_probability: approvalProb,
+      eligible_amount: maxLoan,
+      estimated_emi: reqEmi,
+      debt_to_income: dti,
+      risk_level: risk
+    };
+  }
+
+  function updateSimulation() {
+    const amount = parseFloat(document.getElementById('amount-slider').value);
+    const tenure = parseInt(document.getElementById('tenure-slider').value);
+    const credit = parseInt(document.getElementById('credit-slider').value);
+    const emp = parseInt(document.getElementById('employment-select').value);
+
+    // Update Slider text
+    document.getElementById('amount-val').innerText = '₹' + amount.toLocaleString('en-IN');
+    document.getElementById('tenure-val').innerText = tenure + ' months';
+    document.getElementById('credit-val').innerText = credit;
+
+    // Run client side model prediction
+    const sim = simulateEligibility(amount, tenure, credit, emp);
+
+    // Update Gauge Visuals
+    document.getElementById('gauge-pct').innerText = Math.round(sim.approval_probability) + '%';
+    
+    // Update gauge dashoffset
+    // Perimeter of r=76 circle is 477.5
+    const offset = 477.5 - (477.5 * sim.approval_probability) / 100.0;
+    document.getElementById('gauge-circle').setAttribute('stroke-dashoffset', offset);
+
+    // Change color based on score
+    let strokeColor = '#ec4899'; // pink
+    if (sim.approval_probability >= 75) strokeColor = '#10b981'; // green
+    else if (sim.approval_probability < 45) strokeColor = '#ef4444'; // red
+    document.getElementById('gauge-circle').setAttribute('stroke', strokeColor);
+
+    // Update KPIs text
+    document.getElementById('val-max-loan').innerText = '₹' + Math.round(sim.eligible_amount).toLocaleString('en-IN');
+    document.getElementById('val-emi').innerText = '₹' + Math.round(sim.estimated_emi).toLocaleString('en-IN') + '/mo';
+    document.getElementById('val-dti').innerText = sim.debt_to_income.toFixed(1) + '%';
+
+    // Update Badges
+    const badgeEligible = document.getElementById('badge-eligible');
+    if (sim.is_eligible) {
+      badgeEligible.innerText = "{% if lang=='ta' %}தகுதி உடையது{% else %}Eligible{% endif %}";
+      badgeEligible.style.background = 'rgba(16, 185, 129, 0.15)';
+      badgeEligible.style.color = '#10b981';
+    } else {
+      badgeEligible.innerText = "{% if lang=='ta' %}தகுதியற்றது{% else %}Not Eligible{% endif %}";
+      badgeEligible.style.background = 'rgba(239, 68, 68, 0.15)';
+      badgeEligible.style.color = '#ef4444';
+    }
+
+    const badgeRisk = document.getElementById('badge-risk');
+    badgeRisk.innerText = sim.risk_level;
+    if (sim.risk_level === 'Low') {
+      badgeRisk.style.background = 'rgba(16, 185, 129, 0.15)';
+      badgeRisk.style.color = '#10b981';
+    } else if (sim.risk_level === 'Medium') {
+      badgeRisk.style.background = 'rgba(245, 158, 11, 0.15)';
+      badgeRisk.style.color = '#f59e0b';
+    } else {
+      badgeRisk.style.background = 'rgba(239, 68, 68, 0.15)';
+      badgeRisk.style.color = '#ef4444';
+    }
+
+    // Re-render Bar Chart
+    renderChart(credit, sim.debt_to_income, sim.approval_probability);
+  }
+
+  // Draw Radar / Polar Factor analysis Chart
+  function renderChart(credit, dti, prob) {
+    // Factors normalized to 100%
+    const creditFactor = ((credit - 300) / 600) * 100.0;
+    const debtFactor = Math.max(0.0, 100.0 - dti);
+    const capacityFactor = prob; // representation
+
+    const chartData = [creditFactor, debtFactor, capacityFactor];
+
+    if (chartInstance) {
+      chartInstance.data.datasets[0].data = chartData;
+      chartInstance.update();
+    } else {
+      const ctx = document.getElementById('factorChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['Credit Score', 'Debt-to-Income (Repayment)', 'Overall Approval Prob'],
+          datasets: [{
+            label: 'Profile Strength (%)',
+            data: chartData,
+            backgroundColor: 'rgba(236, 72, 153, 0.2)',
+            borderColor: '#ec4899',
+            borderWidth: 2,
+            pointBackgroundColor: '#ec4899'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            r: {
+              angleLines: { color: 'rgba(255,255,255,0.06)' },
+              grid: { color: 'rgba(255,255,255,0.06)' },
+              pointLabels: { color: '#8f9cae', font: { size: 11, weight: '500' } },
+              ticks: { display: false, max: 100, min: 0 }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  function applyQueryParams() {
+    const amount = document.getElementById('amount-slider').value;
+    const tenure = document.getElementById('tenure-slider').value;
+    const credit = document.getElementById('credit-slider').value;
+    const emp = document.getElementById('employment-select').value;
+    window.location.href = `/loan-eligibility?requested_amount=${amount}&tenure_months=${tenure}&credit_score=${credit}&employment_status=${emp}`;
+  }
+
+  // Save current evaluation
+  async function submitLoanEvaluation() {
+    const amount = document.getElementById('amount-slider').value;
+    const tenure = document.getElementById('tenure-slider').value;
+    const credit = document.getElementById('credit-slider').value;
+    const emp = document.getElementById('employment-select').value;
+
+    const evalBtn = document.getElementById('eval-btn');
+    evalBtn.disabled = true;
+    evalBtn.innerText = "Evaluating...";
+
+    const formData = new FormData();
+    formData.append('requested_amount', amount);
+    formData.append('tenure_months', tenure);
+    formData.append('credit_score', credit);
+    formData.append('employment_status', emp);
+
+    try {
+      const response = await fetch('/api/loan-eligibility', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert("✅ Evaluation processed and logged successfully!");
+        window.location.reload();
+      } else {
+        alert("❌ Processing failed: " + data.error);
+        evalBtn.disabled = false;
+        evalBtn.innerText = "Save & Log Evaluation";
+      }
+    } catch(e) {
+      alert("❌ Communication error: " + e.message);
+      evalBtn.disabled = false;
+      evalBtn.innerText = "Save & Log Evaluation";
+    }
+  }
+
+  // Initial Draw
+  window.addEventListener('DOMContentLoaded', () => {
+    // Trigger gauge circle update
+    const scoreVal = {{ result.approval_probability }};
+    const offset = 477.5 - (477.5 * scoreVal) / 100.0;
+    document.getElementById('gauge-circle').setAttribute('stroke-dashoffset', offset);
+
+    let strokeColor = '#ec4899';
+    if (scoreVal >= 75) strokeColor = '#10b981';
+    else if (scoreVal < 45) strokeColor = '#ef4444';
+    document.getElementById('gauge-circle').setAttribute('stroke', strokeColor);
+
+    renderChart({{ result.credit_score }}, {{ result.debt_to_income }}, scoreVal);
+  });
+</script>
+
+<style>
+  /* Sliders premium style overrides */
+  input[type=range] {
+    height: 6px;
+    -webkit-appearance: none;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(236, 72, 153, 0.4);
+    transition: transform 0.1s ease;
+  }
+  input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}AI Goal Planner — WalletIQ{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+  <div class="page-header-left">
+    <h1 class="page-title">🎯 AI Goal Planner</h1>
+    <p class="page-subtitle">Track your goals with advanced predictions and AI savings recommendations.</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="openCreateGoalModal()">+ Create Savings Goal</button>
+  </div>
+</div>
+
+<!-- Active Goals List -->
+<div class="grid grid-3" id="goalsGrid">
+  <!-- Goal cards will be injected dynamically via JS -->
+</div>
+
+<!-- AI Optimization Plan -->
+<div class="card" style="margin-top: 24px;">
+  <div class="card-header">
+    <h3 class="card-title">🤖 Goal-Oriented AI Savings Roadmap</h3>
+  </div>
+  <div class="card-body">
+    <div id="aiPlanContainer">
+      <p style="color: var(--text3);">Select or create a goal to view the generated AI actions.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Create Goal Modal -->
+<div class="modal" id="createGoalModal" style="display: none;">
+  <div class="modal-content" style="max-width: 500px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px;">
+    <h3 style="margin-bottom: 16px; color: var(--gold);">Create Savings Goal</h3>
+    <form id="createGoalForm" onsubmit="submitGoal(event)">
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px;">Goal Name</label>
+        <input type="text" id="goalName" required style="width: 100%; padding: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);">
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px;">Category</label>
+        <select id="goalCategory" required style="width: 100%; padding: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);">
+          <option value="Emergency Fund">Emergency Fund</option>
+          <option value="Laptop">Laptop</option>
+          <option value="Vehicle">Vehicle</option>
+          <option value="Travel">Travel</option>
+          <option value="Education">Education</option>
+          <option value="Wedding">Wedding</option>
+          <option value="House">House</option>
+          <option value="Investment">Investment</option>
+          <option value="Retirement">Retirement</option>
+          <option value="Custom Goal">Custom Goal</option>
+        </select>
+      </div>
+      <div style="margin-bottom: 12px; display: flex; gap: 12px;">
+        <div style="flex: 1;">
+          <label style="display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px;">Target Amount (₹)</label>
+          <input type="number" id="goalTarget" required min="1" style="width: 100%; padding: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);">
+        </div>
+        <div style="flex: 1;">
+          <label style="display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px;">Current Savings (₹)</label>
+          <input type="number" id="goalCurrent" required min="0" value="0" style="width: 100%; padding: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);">
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px;">Deadline Target Date</label>
+        <input type="date" id="goalDeadline" required style="width: 100%; padding: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-ghost" onclick="closeCreateGoalModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Goal</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  loadGoals();
+});
+
+function openCreateGoalModal() {
+  document.getElementById('createGoalModal').style.display = 'flex';
+}
+
+function closeCreateGoalModal() {
+  document.getElementById('createGoalModal').style.display = 'none';
+}
+
+async function loadGoals() {
+  const res = await fetch('/api/goals');
+  const d = await res.json();
+  if (d.ok && d.goals.length > 0) {
+    const grid = document.getElementById('goalsGrid');
+    grid.innerHTML = '';
+    d.goals.forEach(g => {
+      grid.innerHTML += `
+        <div class="card" onclick="loadGoalAIRecommendations(${g.id}, '${g.name}')" style="cursor: pointer; border-color: ${g.status === 'Completed' ? 'var(--green)' : 'var(--border)'}">
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 10px; text-transform: uppercase; color: var(--gold);">${g.category}</span>
+              <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: ${g.priority === 'High' ? 'var(--red-dim)' : 'var(--surface2)'}; color: ${g.priority === 'High' ? 'var(--red)' : 'var(--text2)'};">${g.priority}</span>
+            </div>
+            <h3 style="margin-bottom: 8px; font-size: 16px;">${g.name}</h3>
+            
+            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+              <span style="color: var(--text3);">Progress</span>
+              <span>₹${g.current_savings.toLocaleString()} / ₹${g.target_amount.toLocaleString()}</span>
+            </div>
+            
+            <div style="height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-bottom: 12px;">
+              <div style="width: ${g.progress_pct}%; height: 100%; background: var(--gold); border-radius: 3px;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text3);">
+              <span>Target Month: ${g.deadline}</span>
+              <span>AI Probability: <strong>${g.success_probability}%</strong></span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    // Auto load suggestions for first goal
+    loadGoalAIRecommendations(d.goals[0].id, d.goals[0].name);
+  } else {
+    document.getElementById('goalsGrid').innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text3);">
+        <h3>No savings goals created yet.</h3>
+        <p>Use the button above to setup your first smart financial goal.</p>
+      </div>
+    `;
+  }
+}
+
+async function loadGoalAIRecommendations(gid, name) {
+  const res = await fetch('/api/goal-recommendations');
+  const d = await res.json();
+  const planContainer = document.getElementById('aiPlanContainer');
+  planContainer.innerHTML = '';
+  
+  if (d.ok && d.goal_recommendations[name]) {
+    planContainer.innerHTML = `<h4>💡 Actions to achieve: "${name}"</h4><ul style="margin-top: 12px; padding-left: 20px;">`;
+    d.goal_recommendations[name].forEach(act => {
+      planContainer.innerHTML += `<li style="margin-bottom: 8px; font-size: 13.5px; color: var(--text2);">${act.action} (+₹${act.impact_amount} monthly savings)</li>`;
+    });
+    planContainer.innerHTML += '</ul>';
+  } else {
+    planContainer.innerHTML = `<p style="color: var(--text3);">No actions generated yet for this goal.</p>`;
+  }
+}
+
+async function submitGoal(e) {
+  e.preventDefault();
+  const data = {
+    name: document.getElementById('goalName').value,
+    category: document.getElementById('goalCategory').value,
+    target_amount: parseFloat(document.getElementById('goalTarget').value),
+    current_savings: parseFloat(document.getElementById('goalCurrent').value),
+    deadline: document.getElementById('goalDeadline').value,
+  };
+  
+  const res = await fetch('/api/goals', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  });
+  
+  const d = await res.json();
+  if (d.ok) {
+    closeCreateGoalModal();
+    loadGoals();
+  } else {
+    alert(d.message || 'Failed to create goal');
+  }
+}
+</script>
+{% endblock %}

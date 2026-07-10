@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WalletIQ — Error {{ code }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0A0A0F; --surface:#141420; --surface2:#1A1A28;
+  --border:rgba(255,255,255,0.07);
+  --text:#F0EEE6; --text2:#A8A49C; --text3:#6B6760;
+  --gold:#C8A96E; --gold2:#E2C98A;
+  --font-ui:'Inter',system-ui,sans-serif;
+  --font-display:'Playfair Display',Georgia,serif;
+}
+html,body { height:100%; background:var(--bg); color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; overflow:hidden; }
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 50% 30%, rgba(200,169,110,0.04) 0%, transparent 60%);
+}
+.page {
+  position:relative; z-index:1; height:100vh;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+  text-align:center;
+}
+.card {
+  width:100%; max-width:440px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:48px 40px;
+  box-shadow:0 24px 48px rgba(0,0,0,0.4);
+}
+.code {
+  font-family:var(--font-display); font-size:72px; font-weight:700; color:var(--gold);
+  line-height:1; margin-bottom:12px; letter-spacing:-0.03em;
+}
+.title { font-family:var(--font-display); font-size:22px; font-weight:600; margin-bottom:10px; }
+.desc { font-size:14px; color:var(--text2); line-height:1.6; margin-bottom:28px; }
+.btn {
+  display:inline-block; padding:11px 24px; background:var(--gold); border:none; border-radius:8px;
+  color:#0A0A0F; font-size:13.5px; font-weight:600; text-decoration:none; transition:all 0.15s;
+}
+.btn:hover { background:var(--gold2); box-shadow:0 4px 16px rgba(200,169,110,0.2); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="card">
+    <div class="code">{{ code }}</div>
+    <h2 class="title">{{ title }}</h2>
+    <p class="desc">{{ message }}</p>
+    <a href="/" class="btn">Return to Home</a>
+  </div>
+</div>
+</body>
+</html>

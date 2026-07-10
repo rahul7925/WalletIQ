@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WalletIQ — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg:#0A0A0F; --surface:#141420; --surface2:#1A1A28; --surface3:#222234;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --text:#F0EEE6; --text2:#A8A49C; --text3:#6B6760;
+  --gold:#C8A96E; --gold2:#E2C98A; --gold-dim:rgba(200,169,110,0.10);
+  --green:#4CAF82; --red:#E05A5A;
+  --font-ui:'Inter',system-ui,sans-serif;
+  --font-display:'Playfair Display',Georgia,serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+html,body { height:100%; background:var(--bg); color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 60% at 15% 5%, rgba(200,169,110,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 85% 95%, rgba(91,143,212,0.04) 0%, transparent 55%);
+}
+.page {
+  position:relative; z-index:1; min-height:100vh;
+  display:grid; grid-template-columns:1fr 1fr;
+}
+
+/* LEFT PANEL */
+.left-panel {
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:48px 56px; border-right:1px solid var(--border);
+}
+.brand { display:flex; align-items:center; gap:10px; }
+.brand-icon {
+  width:32px; height:32px; background:var(--gold); border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+}
+.brand-icon svg { width:17px; height:17px; fill:#0A0A0F; }
+.brand-name { font-family:var(--font-display); font-size:17px; font-weight:600; color:var(--text); }
+.brand-name span { color:var(--gold); }
+.left-headline { flex:1; display:flex; flex-direction:column; justify-content:center; padding:40px 0; }
+.left-headline h1 {
+  font-family:var(--font-display); font-size:42px; font-weight:600;
+  color:var(--text); line-height:1.15; letter-spacing:-0.02em; margin-bottom:18px;
+}
+.left-headline h1 em { font-style:normal; color:var(--gold); }
+.left-headline p { font-size:15px; color:var(--text2); line-height:1.65; max-width:380px; }
+.feature-list { margin-top:40px; display:flex; flex-direction:column; gap:14px; }
+.feature-item { display:flex; align-items:flex-start; gap:12px; }
+.feature-dot { width:6px; height:6px; border-radius:50%; background:var(--gold); margin-top:7px; flex-shrink:0; }
+.feature-text { font-size:13.5px; color:var(--text2); line-height:1.5; }
+.feature-text strong { color:var(--text); font-weight:500; }
+.left-footer { font-size:12px; color:var(--text3); }
+
+/* RIGHT PANEL */
+.right-panel {
+  display:flex; align-items:center; justify-content:center;
+  padding:48px 56px;
+}
+.form-card { width:100%; max-width:400px; }
+.form-card h2 { font-family:var(--font-display); font-size:26px; font-weight:600; color:var(--text); margin-bottom:6px; letter-spacing:-0.01em; }
+.form-card .sub { font-size:13.5px; color:var(--text2); margin-bottom:32px; }
+
+/* Language picker */
+.lang-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:26px; }
+.lang-opt { position:relative; cursor:pointer; }
+.lang-opt input { position:absolute; opacity:0; width:0; height:0; }
+.lang-card {
+  display:flex; align-items:center; gap:10px; padding:12px 14px;
+  background:var(--surface2); border:1.5px solid var(--border);
+  border-radius:10px; cursor:pointer; transition:border-color 0.15s, background 0.15s;
+}
+.lang-opt input:checked + .lang-card { border-color:var(--gold); background:var(--gold-dim); }
+.lang-card:hover { border-color:var(--border2); }
+.lang-flag { font-size:19px; line-height:1; }
+.lang-label-text { display:flex; flex-direction:column; }
+.lang-en { font-size:13px; font-weight:500; color:var(--text); }
+.lang-native { font-size:11px; color:var(--text3); }
+.lang-check { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--border2); margin-left:auto; display:flex; align-items:center; justify-content:center; font-size:9px; color:transparent; transition:all 0.15s; }
+.lang-opt input:checked + .lang-card .lang-check { background:var(--gold); border-color:var(--gold); color:#0A0A0F; font-weight:700; }
+
+.error-msg { background:rgba(224,90,90,0.08); border:1px solid rgba(224,90,90,0.2); color:var(--red); padding:11px 14px; border-radius:8px; font-size:13px; margin-bottom:20px; }
+.success-msg { background:rgba(76,175,130,0.08); border:1px solid rgba(76,175,130,0.2); color:var(--green); padding:11px 14px; border-radius:8px; font-size:13px; margin-bottom:20px; }
+
+
+.field { margin-bottom:16px; }
+.field label { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.09em; color:var(--text3); margin-bottom:7px; }
+.field-wrap { position:relative; }
+.field input {
+  width:100%; padding:11px 14px 11px 40px; background:var(--surface2);
+  border:1px solid var(--border); border-radius:8px; color:var(--text);
+  font-family:var(--font-ui); font-size:13.5px; outline:none; transition:all 0.15s;
+}
+.field input::placeholder { color:var(--text3); }
+.field input:focus { border-color:var(--gold); background:var(--surface3); box-shadow:0 0 0 3px rgba(200,169,110,0.08); }
+.field-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:14px; pointer-events:none; }
+.field-action { position:absolute; right:13px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:13px; cursor:pointer; transition:color 0.15s; }
+.field-action:hover { color:var(--text2); }
+
+.remember-row { display:flex; align-items:center; gap:8px; margin-bottom:22px; font-size:13px; color:var(--text2); }
+.remember-row input[type=checkbox] { width:14px; height:14px; accent-color:var(--gold); cursor:pointer; }
+
+.btn-submit {
+  width:100%; padding:12px; background:var(--gold); border:none; border-radius:8px;
+  color:#0A0A0F; font-family:var(--font-ui); font-size:13.5px; font-weight:600;
+  cursor:pointer; transition:background 0.15s, box-shadow 0.15s; letter-spacing:0.02em;
+}
+.btn-submit:hover { background:var(--gold2); box-shadow:0 4px 20px rgba(200,169,110,0.22); }
+.btn-submit:active { transform:scale(0.99); }
+
+.divider { display:flex; align-items:center; gap:12px; margin:22px 0; color:var(--text3); font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; }
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.form-footer { text-align:center; font-size:13px; color:var(--text2); }
+.form-footer a { color:var(--gold); text-decoration:none; font-weight:500; }
+.form-footer a:hover { color:var(--gold2); text-decoration:underline; }
+.security-note { margin-top:22px; text-align:center; font-size:11.5px; color:var(--text3); display:flex; align-items:center; justify-content:center; gap:6px; }
+
+@media (max-width:800px) {
+  .page { grid-template-columns:1fr; }
+  .left-panel { display:none; }
+  .right-panel { padding:32px 20px; min-height:100dvh; align-items:flex-start; padding-top:48px; }
+  .form-card { max-width:100%; }
+}
+@media (max-width:480px) {
+  .right-panel { padding:24px 16px; padding-top:32px; }
+  .form-card h2 { font-size:22px; }
+  .lang-row { gap:8px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Left -->
+  <div class="left-panel">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+      </div>
+      <span class="brand-name">Wallet<span>IQ</span></span>
+    </div>
+    <div class="left-headline">
+      <h1>Your finances,<br><em>finally</em> in order.</h1>
+      <p>WalletIQ gives you a clear picture of where your money goes — and where it should be going.</p>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>Smart expense tracking</strong> with AI auto-categorization</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>Budget vs actual</strong> — know before you overspend</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>Investment portfolio</strong> tracker for SIP, PPF, stocks & more</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><strong>AI financial advisor</strong> — ask anything, get real answers</div></div>
+      </div>
+    </div>
+    <div class="left-footer">© 2024 WalletIQ · Built for Indian personal finance</div>
+  </div>
+
+  <!-- Right -->
+  <div class="right-panel">
+    <div class="form-card">
+      <h2>Welcome back</h2>
+      <p class="sub">Sign in to continue to your dashboard</p>
+
+      {% if error %}
+      <div class="error-msg">{{ error }}</div>
+      {% endif %}
+      {% if success %}
+      <div class="success-msg">{{ success }}</div>
+      {% endif %}
+
+
+      <form method="POST">
+        <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:var(--text3);margin-bottom:10px;">Choose language / மொழி தேர்வு</p>
+        <div class="lang-row">
+          <label class="lang-opt">
+            <input type="radio" name="language" value="en" checked>
+            <div class="lang-card">
+              <span class="lang-flag">🇬🇧</span>
+              <div class="lang-label-text"><span class="lang-en">English</span><span class="lang-native">English</span></div>
+              <div class="lang-check">✓</div>
+            </div>
+          </label>
+          <label class="lang-opt">
+            <input type="radio" name="language" value="ta">
+            <div class="lang-card">
+              <span class="lang-flag">🇮🇳</span>
+              <div class="lang-label-text"><span class="lang-en">Tamil</span><span class="lang-native">தமிழ்</span></div>
+              <div class="lang-check">✓</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="divider">sign in</div>
+
+        <div class="field">
+          <label>Username or Email</label>
+          <div class="field-wrap">
+            <span class="field-icon">👤</span>
+            <input type="text" name="username" placeholder="Your username or email" required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="field">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:7px;">
+            <label style="margin:0;">Password</label>
+            <a href="/forgot-password" style="font-size:11px;color:var(--gold);text-decoration:none;font-weight:500;">Forgot password?</a>
+          </div>
+          <div class="field-wrap">
+            <span class="field-icon">🔑</span>
+            <input type="password" name="password" id="pwd" placeholder="Your password" required autocomplete="current-password">
+            <span class="field-action" onclick="togglePwd()" title="Show/hide">👁</span>
+          </div>
+        </div>
+
+
+        <div class="remember-row">
+          <input type="checkbox" name="remember" id="remember">
+          <label for="remember" style="cursor:pointer">Keep me signed in</label>
+        </div>
+
+        <button type="submit" class="btn-submit">Sign in</button>
+      </form>
+
+      <div class="form-footer" style="margin-top:22px">
+        No account? <a href="/register">Create one free →</a>
+      </div>
+      <div class="security-note">
+        <span style="font-size:13px">🔒</span>
+        Sessions encrypted · Data isolated per user
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function togglePwd() {
+  const i = document.getElementById('pwd');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+</script>
+</body>
+</html>

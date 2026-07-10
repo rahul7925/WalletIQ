@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+
+# IDEs
+.idea/
+.vscode/
+
+# Flask / DB / uploads
+instance/
+*.db
+*.sqlite3
+
+# Environment variables
+.env
+
+# Local artifacts / model artifacts (optional: keep if you want to ship them)
+model.pkl
+vectorizer.pkl
+pipeline.pkl
+
+# OS
+.DS_Store
+Thumbs.db
+
