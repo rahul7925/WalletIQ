@@ -12,3 +12,655 @@
 2026-07-10 10:07:33,505 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
 2026-07-10 10:07:33,519 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
 2026-07-10 10:07:33,572 [INFO] Session cleared: nonexistent_session_en
+2026-07-10 10:39:56,691 [WARNING] Failed login attempt: Raghul s from 127.0.0.1
+2026-07-10 10:43:08,761 [INFO] New user registered: Rahul
+2026-07-10 10:43:40,735 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:44:15,361 [ERROR] 500 error occurred
+Traceback (most recent call last):
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\app.py", line 1855, in report_studio
+    return render_template('report_studio.html',
+                           reports=reports,
+    ...<5 lines>...
+                           lang=current_user.language,
+                           now=now)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "D:\project\AI Financial Assistant v2\templates\report_studio.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "D:\project\AI Financial Assistant v2\templates\base.html", line 767, in top-level template code
+    {% if stats is defined and stats.overdue_bills > 0 %}<span class="nav-badge">{{ stats.overdue_bills }}</span>{% endif %}
+    ^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'dict object' has no attribute 'overdue_bills'
+2026-07-10 10:44:28,088 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:44:30,329 [WARNING] Failed to generate Gemini savings suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:45:01,956 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:45:22,893 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:45:34,837 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:45:36,220 [WARNING] Failed to generate Gemini savings suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:45:55,978 [ERROR] 500 error occurred
+Traceback (most recent call last):
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\app.py", line 1553, in loan_eligibility
+    return render_template('loan_eligibility.html',
+                           result=res,
+                           saved_runs=saved_runs,
+                           lang=current_user.language,
+                           now=ist_now())
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 150, in render_template
+    template = app.jinja_env.get_or_select_template(template_name_or_list)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1087, in get_or_select_template
+    return self.get_template(template_name_or_list, parent, globals)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 975, in _load_template
+    template = self.loader.load(self, name, self.make_globals(globals))
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\loaders.py", line 138, in load
+    code = environment.compile(source, name, filename)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 771, in compile
+    self.handle_exception(source=source_hint)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "D:\project\AI Financial Assistant v2\templates\loan_eligibility.html", line 234, in template
+    const userIncome = {{ result.requested_amount > 0 and (result.eligible_amount / ( (result.estimated_emi > 0) ? (result.eligible_amount / result.estimated_emi) : 60 )) or 50000.0 }}; // estimated
+    ^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.TemplateSyntaxError: unexpected char '?' at 15956
+2026-07-10 10:45:59,120 [ERROR] 500 error occurred
+Traceback (most recent call last):
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\app.py", line 1621, in command_center
+    generate_financial_alerts(current_user.id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\services\notification_service.py", line 116, in generate_financial_alerts
+    this_week_expenses = [e for e in this_month_expenses if e.created_at >= one_week_ago]
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: can't compare offset-naive and offset-aware datetimes
+2026-07-10 10:46:01,739 [ERROR] 500 error occurred
+Traceback (most recent call last):
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\app.py", line 1855, in report_studio
+    return render_template('report_studio.html',
+                           reports=reports,
+    ...<5 lines>...
+                           lang=current_user.language,
+                           now=now)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "D:\project\AI Financial Assistant v2\templates\report_studio.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "D:\project\AI Financial Assistant v2\templates\base.html", line 767, in top-level template code
+    {% if stats is defined and stats.overdue_bills > 0 %}<span class="nav-badge">{{ stats.overdue_bills }}</span>{% endif %}
+    ^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'dict object' has no attribute 'overdue_bills'
+2026-07-10 10:46:04,933 [ERROR] 500 error occurred
+Traceback (most recent call last):
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\app.py", line 1553, in loan_eligibility
+    return render_template('loan_eligibility.html',
+                           result=res,
+                           saved_runs=saved_runs,
+                           lang=current_user.language,
+                           now=ist_now())
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 150, in render_template
+    template = app.jinja_env.get_or_select_template(template_name_or_list)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1087, in get_or_select_template
+    return self.get_template(template_name_or_list, parent, globals)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 975, in _load_template
+    template = self.loader.load(self, name, self.make_globals(globals))
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\loaders.py", line 138, in load
+    code = environment.compile(source, name, filename)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 771, in compile
+    self.handle_exception(source=source_hint)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "D:\project\AI Financial Assistant v2\templates\loan_eligibility.html", line 234, in template
+    const userIncome = {{ result.requested_amount > 0 and (result.eligible_amount / ( (result.estimated_emi > 0) ? (result.eligible_amount / result.estimated_emi) : 60 )) or 50000.0 }}; // estimated
+    ^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.TemplateSyntaxError: unexpected char '?' at 15956
+2026-07-10 10:46:30,926 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 10:46:31,225 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:46:31,226 [INFO] Session cleared: user_5_en_en
+2026-07-10 10:46:31,227 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:46:49,500 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 10:46:49,812 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:46:49,813 [INFO] Session cleared: user_5_en_en
+2026-07-10 10:46:49,813 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:48:38,109 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:51:03,655 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:51:29,863 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:51:39,055 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:51:49,009 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:52:09,300 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:52:39,570 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:53:15,718 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:53:31,076 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:53:44,775 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:53:59,633 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:55:15,686 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:55:37,364 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:55:51,543 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:56:08,823 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:56:25,658 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 10:56:51,860 [WARNING] Failed to generate Gemini savings suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:58:18,788 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 10:58:19,085 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:58:19,086 [INFO] Session cleared: user_5_en_en
+2026-07-10 10:58:19,086 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:58:31,628 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 10:58:31,968 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:58:31,971 [INFO] Session cleared: user_5_en_en
+2026-07-10 10:58:31,975 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:59:23,401 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 10:59:23,712 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:59:23,712 [INFO] Session cleared: user_5_en_en
+2026-07-10 10:59:23,713 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:59:54,426 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 10:59:54,755 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 10:59:54,756 [INFO] Session cleared: user_5_en_en
+2026-07-10 10:59:54,756 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:02:10,392 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 11:02:10,689 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:02:10,690 [INFO] Session cleared: user_5_en_en
+2026-07-10 11:02:10,691 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:05:48,766 [ERROR] 500 error occurred
+Traceback (most recent call last):
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\app.py", line 1553, in loan_eligibility
+    return render_template('loan_eligibility.html',
+                           result=res,
+                           saved_runs=saved_runs,
+                           lang=current_user.language,
+                           now=ist_now())
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 150, in render_template
+    template = app.jinja_env.get_or_select_template(template_name_or_list)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1087, in get_or_select_template
+    return self.get_template(template_name_or_list, parent, globals)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 975, in _load_template
+    template = self.loader.load(self, name, self.make_globals(globals))
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\loaders.py", line 138, in load
+    code = environment.compile(source, name, filename)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 771, in compile
+    self.handle_exception(source=source_hint)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "D:\project\AI Financial Assistant v2\templates\loan_eligibility.html", line 234, in template
+    const userIncome = {{ result.requested_amount > 0 and (result.eligible_amount / ( (result.estimated_emi > 0) ? (result.eligible_amount / result.estimated_emi) : 60 )) or 50000.0 }}; // estimated
+    ^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.TemplateSyntaxError: unexpected char '?' at 15956
+2026-07-10 11:06:01,582 [ERROR] 500 error occurred
+Traceback (most recent call last):
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\app.py", line 1621, in command_center
+    generate_financial_alerts(current_user.id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\services\notification_service.py", line 116, in generate_financial_alerts
+    this_week_expenses = [e for e in this_month_expenses if e.created_at >= one_week_ago]
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: can't compare offset-naive and offset-aware datetimes
+2026-07-10 11:06:08,123 [ERROR] 500 error occurred
+Traceback (most recent call last):
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\app.py", line 1855, in report_studio
+    return render_template('report_studio.html',
+                           reports=reports,
+    ...<5 lines>...
+                           lang=current_user.language,
+                           now=now)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "D:\project\AI Financial Assistant v2\templates\report_studio.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "D:\project\AI Financial Assistant v2\templates\base.html", line 767, in top-level template code
+    {% if stats is defined and stats.overdue_bills > 0 %}<span class="nav-badge">{{ stats.overdue_bills }}</span>{% endif %}
+    ^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'dict object' has no attribute 'overdue_bills'
+2026-07-10 11:10:46,341 [WARNING] Failed login attempt: Raghul s from 127.0.0.1
+2026-07-10 11:11:03,489 [INFO] Login: Rahul lang=en
+2026-07-10 11:11:03,522 [ERROR] 500 error occurred
+Traceback (most recent call last):
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\project\AI Financial Assistant v2\app.py", line 1855, in report_studio
+    return render_template('report_studio.html',
+                           reports=reports,
+    ...<5 lines>...
+                           lang=current_user.language,
+                           now=now)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "D:\project\AI Financial Assistant v2\templates\report_studio.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "D:\project\AI Financial Assistant v2\templates\base.html", line 767, in top-level template code
+    {% if stats is defined and stats.overdue_bills > 0 %}<span class="nav-badge">{{ stats.overdue_bills }}</span>{% endif %}
+    ^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'dict object' has no attribute 'overdue_bills'
+2026-07-10 11:18:13,914 [INFO] Password reset success for user: recover_user
+2026-07-10 11:18:14,744 [INFO] Login: login_user lang=en
+2026-07-10 11:18:14,746 [INFO] Logout: login_user
+2026-07-10 11:18:14,874 [INFO] Login: login_user lang=en
+2026-07-10 11:18:14,876 [INFO] Logout: login_user
+2026-07-10 11:18:14,993 [WARNING] Failed login attempt: login_user from 127.0.0.1
+2026-07-10 11:18:15,869 [INFO] New user registered: user1
+2026-07-10 11:18:16,867 [INFO] New user registered: rahul_fintech
+2026-07-10 11:18:17,197 [WARNING] Model gemini-2.5-flash-lite failed for session test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:18:17,198 [INFO] Session cleared: test_session_1_en
+2026-07-10 11:18:17,198 [ERROR] All Gemini models failed session=test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:18:17,237 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 11:18:17,251 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 11:18:17,303 [INFO] Session cleared: nonexistent_session_en
+2026-07-10 11:47:14,513 [INFO] Password reset success for user: recover_user
+2026-07-10 11:47:15,361 [INFO] Login: login_user lang=en
+2026-07-10 11:47:15,364 [INFO] Logout: login_user
+2026-07-10 11:47:15,522 [INFO] Login: login_user lang=en
+2026-07-10 11:47:15,528 [INFO] Logout: login_user
+2026-07-10 11:47:15,693 [WARNING] Failed login attempt: login_user from 127.0.0.1
+2026-07-10 11:47:16,604 [INFO] New user registered: user1
+2026-07-10 11:47:17,510 [INFO] New user registered: rahul_fintech
+2026-07-10 11:47:17,806 [WARNING] Model gemini-2.5-flash-lite failed for session test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:47:17,806 [INFO] Session cleared: test_session_1_en
+2026-07-10 11:47:17,806 [ERROR] All Gemini models failed session=test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:47:17,844 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 11:47:17,857 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 11:47:17,906 [INFO] Session cleared: nonexistent_session_en
+2026-07-10 11:50:59,538 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 11:50:59,862 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:50:59,863 [INFO] Session cleared: user_5_en_en
+2026-07-10 11:50:59,863 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:51:14,159 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 11:51:14,466 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:51:14,467 [INFO] Session cleared: user_5_en_en
+2026-07-10 11:51:14,467 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:51:23,639 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 11:51:23,945 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:51:23,946 [INFO] Session cleared: user_5_en_en
+2026-07-10 11:51:23,946 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:51:40,040 [WARNING] Could not build financial context for user 5: type object 'Expense' has no attribute 'date'
+2026-07-10 11:51:40,360 [WARNING] Model gemini-2.5-flash-lite failed for session user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:51:40,361 [INFO] Session cleared: user_5_en_en
+2026-07-10 11:51:40,361 [ERROR] All Gemini models failed session=user_5_en: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:56:25,993 [WARNING] Failed to generate Gemini savings suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:56:28,152 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:58:48,550 [INFO] Password reset success for user: recover_user
+2026-07-10 11:58:49,462 [INFO] Login: login_user lang=en
+2026-07-10 11:58:49,464 [INFO] Logout: login_user
+2026-07-10 11:58:49,599 [INFO] Login: login_user lang=en
+2026-07-10 11:58:49,601 [INFO] Logout: login_user
+2026-07-10 11:58:49,728 [WARNING] Failed login attempt: login_user from 127.0.0.1
+2026-07-10 11:58:50,620 [INFO] New user registered: user1
+2026-07-10 11:58:51,516 [INFO] New user registered: rahul_fintech
+2026-07-10 11:58:51,828 [WARNING] Model gemini-2.5-flash-lite failed for session test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:58:51,828 [INFO] Session cleared: test_session_1_en
+2026-07-10 11:58:51,829 [ERROR] All Gemini models failed session=test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 11:58:51,871 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 11:58:51,883 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 11:58:51,937 [INFO] Session cleared: nonexistent_session_en
+2026-07-10 12:06:15,478 [INFO] Logout: Rahul
+2026-07-10 12:08:00,354 [INFO] Login: Rahul lang=en
+2026-07-10 12:08:48,378 [WARNING] ML pipeline load failed: DLL load failed while importing _check_build: An Application Control policy has blocked this file.
+___________________________________________________________________________
+Contents of C:\Users\vsbcetc\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\__check_build:
+meson.build               _check_build.cp314-win_amd64.lib_check_build.cp314-win_amd64.pyd
+_check_build.pyx          __init__.py               __pycache__
+___________________________________________________________________________
+It seems that scikit-learn has not been built correctly.
+
+If you have installed scikit-learn from source, please do not forget
+to build the package before using it. For detailed instructions, see:
+https://scikit-learn.org/dev/developers/development_setup.html#install-editable-version-of-scikit-learn
+
+If you have used an installer, please check that it is suited for your
+Python version, your operating system and your platform.
+2026-07-10 12:09:49,365 [INFO] Password reset success for user: recover_user
+2026-07-10 12:09:50,225 [INFO] Login: login_user lang=en
+2026-07-10 12:09:50,228 [INFO] Logout: login_user
+2026-07-10 12:09:50,361 [INFO] Login: login_user lang=en
+2026-07-10 12:09:50,364 [INFO] Logout: login_user
+2026-07-10 12:09:50,497 [WARNING] Failed login attempt: login_user from 127.0.0.1
+2026-07-10 12:09:51,394 [INFO] New user registered: user1
+2026-07-10 12:09:52,288 [INFO] New user registered: rahul_fintech
+2026-07-10 12:09:52,608 [WARNING] Model gemini-2.5-flash-lite failed for session test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 12:09:52,608 [INFO] Session cleared: test_session_1_en
+2026-07-10 12:09:52,608 [ERROR] All Gemini models failed session=test_session_1: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 12:09:52,644 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 12:09:52,657 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-10 12:09:52,715 [INFO] Session cleared: nonexistent_session_en
+2026-07-10 12:11:41,062 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 12:11:42,763 [WARNING] Failed to generate Gemini savings suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 12:11:59,404 [WARNING] Failed to generate Gemini suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-10 12:12:02,791 [WARNING] Failed to generate Gemini savings suggestions: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.
+2026-07-15 10:02:24,501 [INFO] Password reset success for user: recover_user
+2026-07-15 10:02:27,000 [INFO] Login: login_user lang=en
+2026-07-15 10:02:27,005 [INFO] Logout: login_user
+2026-07-15 10:02:27,277 [INFO] Login: login_user lang=en
+2026-07-15 10:02:27,284 [INFO] Logout: login_user
+2026-07-15 10:02:27,624 [WARNING] Failed login attempt: login_user from 127.0.0.1
+2026-07-15 10:02:30,348 [INFO] New user registered: user1
+2026-07-15 10:02:33,072 [INFO] New user registered: rahul_fintech
+2026-07-15 10:02:36,299 [WARNING] Model gemini-2.5-flash-lite failed for session test_session_1: module 'PIL.Image' has no attribute 'Image'
+2026-07-15 10:02:36,299 [INFO] Session cleared: test_session_1_en
+2026-07-15 10:02:36,300 [ERROR] All Gemini models failed session=test_session_1: module 'PIL.Image' has no attribute 'Image'
+2026-07-15 10:02:36,394 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-15 10:02:36,428 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-15 10:02:36,625 [INFO] Session cleared: nonexistent_session_en
+2026-07-15 10:04:43,596 [INFO] Password reset success for user: recover_user
+2026-07-15 10:04:45,982 [INFO] Login: login_user lang=en
+2026-07-15 10:04:45,987 [INFO] Logout: login_user
+2026-07-15 10:04:46,277 [INFO] Login: login_user lang=en
+2026-07-15 10:04:46,282 [INFO] Logout: login_user
+2026-07-15 10:04:46,656 [WARNING] Failed login attempt: login_user from 127.0.0.1
+2026-07-15 10:04:49,157 [INFO] New user registered: user1
+2026-07-15 10:04:52,057 [INFO] New user registered: rahul_fintech
+2026-07-15 10:04:53,289 [WARNING] Model gemini-2.5-flash-lite failed for session test_session_1: module 'PIL.Image' has no attribute 'Image'
+2026-07-15 10:04:53,290 [INFO] Session cleared: test_session_1_en
+2026-07-15 10:04:53,291 [ERROR] All Gemini models failed session=test_session_1: module 'PIL.Image' has no attribute 'Image'
+2026-07-15 10:04:53,386 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-15 10:04:53,427 [WARNING] Could not build financial context for user 1: type object 'Expense' has no attribute 'date'
+2026-07-15 10:04:53,584 [INFO] Session cleared: nonexistent_session_en

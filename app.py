@@ -64,52 +64,85 @@ app = Flask(__name__, template_folder='templates', static_folder='templates/stat
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(32).hex())
 app.config['SESSION_COOKIE_HTTPONLY']  = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE']   = False   # set True in production with HTTPS
+
+# Set SESSION_COOKIE_SECURE dynamically: default to True in production (HTTPS), or respect env var
+secure_cookie = os.environ.get('SESSION_COOKIE_SECURE', '').lower() in ('true', '1')
+if not secure_cookie and os.environ.get('FLASK_ENV') == 'production':
+    secure_cookie = True
+app.config['SESSION_COOKIE_SECURE']   = secure_cookie
+
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7  # 7 days
 
-# ── Database Config — MySQL ───────────────────────────────────────────────────
-# Uses PyMySQL via SQLAlchemy. Reads connection settings from .env.
-# Required env vars: MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
+# ── Database Config — MySQL / SQLite ───────────────────────────────────────────
+# Reads connection settings from .env (checks unified URL first, then individual parameters, then fallback).
+# Supported env URLs: DATABASE_URL, MYSQL_URL, JAWSDB_URL, CLEARDB_DATABASE_URL
+# Required fallback env vars: MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
 
 # Diagnostic env dump toggle (set WALLETIQ_DB_DIAGNOSTIC=1)
 _WALLETIQ_DB_DIAGNOSTIC = os.environ.get('WALLETIQ_DB_DIAGNOSTIC', '0') == '1'
 
-
-
-MYSQL_HOST = os.environ.get('MYSQL_HOST')
-MYSQL_PORT = os.environ.get('MYSQL_PORT')
-MYSQL_USER = os.environ.get('MYSQL_USER')
-MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD')
-MYSQL_DATABASE = os.environ.get('MYSQL_DATABASE')
-
-missing = [k for k, v in {
-    'MYSQL_HOST': MYSQL_HOST,
-    'MYSQL_PORT': MYSQL_PORT,
-    'MYSQL_USER': MYSQL_USER,
-    'MYSQL_PASSWORD': MYSQL_PASSWORD,
-    'MYSQL_DATABASE': MYSQL_DATABASE,
-}.items() if not v]
-
-if missing:
-    raise RuntimeError(f"Missing required MySQL env vars: {', '.join(missing)}")
-
-user_enc = quote_plus(MYSQL_USER or '')
-pwd_enc  = quote_plus(MYSQL_PASSWORD or '')
-
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    f"mysql+pymysql://{user_enc}:{pwd_enc}"
-    f"@{MYSQL_HOST}:{int(MYSQL_PORT)}/{MYSQL_DATABASE}"
-    f"?charset=utf8mb4"
+db_url = (
+    os.environ.get('DATABASE_URL') or 
+    os.environ.get('MYSQL_URL') or 
+    os.environ.get('JAWSDB_URL') or 
+    os.environ.get('CLEARDB_DATABASE_URL')
 )
+
+if db_url:
+    # Ensure driver is set to mysql+pymysql if it's a mysql URL scheme
+    if db_url.startswith('mysql://'):
+        db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+    log.info("Database URI configured from unified connection URL")
+else:
+    MYSQL_HOST = os.environ.get('MYSQL_HOST')
+    MYSQL_PORT = os.environ.get('MYSQL_PORT')
+    MYSQL_USER = os.environ.get('MYSQL_USER')
+    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD')
+    MYSQL_DATABASE = os.environ.get('MYSQL_DATABASE')
+
+    missing = [k for k, v in {
+        'MYSQL_HOST': MYSQL_HOST,
+        'MYSQL_PORT': MYSQL_PORT,
+        'MYSQL_USER': MYSQL_USER,
+        'MYSQL_PASSWORD': MYSQL_PASSWORD,
+        'MYSQL_DATABASE': MYSQL_DATABASE,
+    }.items() if not v]
+
+    if not missing:
+        user_enc = quote_plus(MYSQL_USER or '')
+        pwd_enc  = quote_plus(MYSQL_PASSWORD or '')
+        app.config['SQLALCHEMY_DATABASE_URI'] = (
+            f"mysql+pymysql://{user_enc}:{pwd_enc}"
+            f"@{MYSQL_HOST}:{int(MYSQL_PORT)}/{MYSQL_DATABASE}"
+            f"?charset=utf8mb4"
+        )
+    else:
+        # Zero-configuration local database fallback (SQLite) in development
+        if os.environ.get('FLASK_ENV') != 'production':
+            log.warning(f"MySQL env vars missing: {', '.join(missing)}. Falling back to SQLite local database.")
+            os.makedirs('instance', exist_ok=True)
+            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/walletiq_fallback.db'
+        else:
+            raise RuntimeError(
+                f"Missing database configuration. Provide DATABASE_URL/MYSQL_URL or separate MySQL env vars: {', '.join(missing)}"
+            )
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# MySQL engine options
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+# MySQL / Database engine options
+engine_options = {
     'pool_pre_ping': True,
     'pool_recycle': 300,
 }
 
+# SSL support (e.g. for AWS RDS, GCP Cloud SQL, or DigitalOcean)
+mysql_ssl_ca = os.environ.get('MYSQL_SSL_CA')
+if mysql_ssl_ca:
+    engine_options['connect_args'] = {'ssl': {'ca': mysql_ssl_ca}}
+    log.info(f"Database connection SSL enabled using CA: {mysql_ssl_ca}")
+
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -1314,6 +1347,119 @@ def export_csv():
         download_name=f'walletiq_{current_user.username}_{date.today()}.csv'
     )
 
+@app.route('/export/pdf')
+@login_required
+def export_pdf():
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    
+    # Query expenses
+    expenses = (Expense.query
+                .filter_by(user_id=current_user.id)
+                .order_by(Expense.created_at.desc()).all())
+
+    # Build PDF in memory
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=(612, 792), rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'DocTitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=18,
+        textColor=colors.HexColor('#C8A96E'),
+        spaceAfter=15
+    )
+    
+    meta_style = ParagraphStyle(
+        'DocMeta',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=10,
+        textColor=colors.HexColor('#A8A49C'),
+        spaceAfter=20
+    )
+
+    header_style = ParagraphStyle(
+        'TableHeader',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        textColor=colors.white
+    )
+    
+    cell_style = ParagraphStyle(
+        'TableCell',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50')
+    )
+
+    story = []
+    
+    # Title & Metadata
+    story.append(Paragraph("WalletIQ — Detailed Transaction Ledger", title_style))
+    story.append(Paragraph(f"Prepared for: <b>{current_user.full_name or current_user.username}</b> | Exported on: {ist_now().strftime('%d %b %Y, %I:%M %p')} IST", meta_style))
+    story.append(Spacer(1, 10))
+    
+    # Table headers
+    headers = [
+        Paragraph("<b>ID</b>", header_style),
+        Paragraph("<b>Title</b>", header_style),
+        Paragraph("<b>Amount (₹)</b>", header_style),
+        Paragraph("<b>Category</b>", header_style),
+        Paragraph("<b>Mode</b>", header_style),
+        Paragraph("<b>Note</b>", header_style),
+        Paragraph("<b>Date</b>", header_style)
+    ]
+    
+    table_data = [headers]
+    
+    for idx, e in enumerate(expenses):
+        table_data.append([
+            Paragraph(str(idx + 1), cell_style),
+            Paragraph(e.title, cell_style),
+            Paragraph(f"₹{e.amount:,.2f}", cell_style),
+            Paragraph(e.category, cell_style),
+            Paragraph(e.payment_mode or "UPI", cell_style),
+            Paragraph(e.note or "—", cell_style),
+            Paragraph(e.created_at.strftime('%Y-%m-%d %H:%M'), cell_style)
+        ])
+        
+    if len(expenses) == 0:
+        table_data.append([Paragraph("No transactions logged.", cell_style), "", "", "", "", "", ""])
+
+    # Table styles (clean light corporate layout inside PDF, text color dark for print readability)
+    # colWidths sum up to 540 (printable width = 612 - 72)
+    t = Table(table_data, colWidths=[30, 110, 80, 80, 50, 110, 80])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1B365D')),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+        ('TOPPADDING', (0,0), (-1,0), 8),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#BDC3C7')),
+        ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#F8F9FA')),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 6),
+        ('TOPPADDING', (0,1), (-1,-1), 6),
+    ]))
+    
+    story.append(t)
+    doc.build(story)
+    
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'walletiq_transactions_{current_user.username}_{date.today()}.pdf'
+    )
+
+
 # ── API ────────────────────────────────────────────────────────────────────────
 @app.route('/api/stats')
 @login_required
@@ -1841,7 +1987,7 @@ def report_studio():
     from services.report_service import get_report_data, get_storage_stats
     now = ist_now()
     preview = get_report_data(current_user.id, now.year, now.month)
-    stats = get_storage_stats(current_user.id)
+    storage_stats = get_storage_stats(current_user.id)
     # Search & filter support
     search = request.args.get('search', '').strip()
     ftype  = request.args.get('filter', '').strip()   # Monthly, Yearly, etc.
@@ -1856,11 +2002,12 @@ def report_studio():
                            reports=reports,
                            all_reports=all_reports,
                            preview=preview,
-                           stats=stats,
+                           storage_stats=storage_stats,
                            search=search,
                            ftype=ftype,
                            lang=current_user.language,
                            now=now)
+
 
 
 # ── Primary generate route (old path kept for backward compat) ─────────────────
@@ -2124,32 +2271,42 @@ def register():
         language = request.form.get('language', 'en')
         recovery_pin = request.form.get('recovery_pin', '').strip()
 
-        # Validation
+        # Validation helper to retain inputs
+        def render_err(msg):
+            return render_template('register.html',
+                                   error=msg,
+                                   username=username,
+                                   email=email or '',
+                                   full_name=fullname,
+                                   language=language,
+                                   recovery_pin=recovery_pin)
+
         if not username:
-            return render_template('register.html', error='Username is required.')
+            return render_err('Username is required.')
         if not re.match(r'^[a-zA-Z0-9_]{3,20}$', username):
-            return render_template('register.html', error='Username must be 3-20 characters and contain only letters, numbers, and underscores.')
+            return render_err('Username must be 3-20 characters and contain only letters, numbers, and underscores.')
         
         if email and not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-            return render_template('register.html', error='Invalid email address format.')
+            return render_err('Invalid email address format.')
 
         is_ok, err_msg = is_strong_password(password)
         if not is_ok:
-            return render_template('register.html', error=err_msg)
+            return render_err(err_msg)
 
         if password != confirm:
-            return render_template('register.html', error='Passwords do not match.')
+            return render_err('Passwords do not match.')
 
         if not recovery_pin or len(recovery_pin) != 6 or not recovery_pin.isdigit():
-            return render_template('register.html', error='Recovery PIN must be exactly 6 digits.')
+            return render_err('Recovery PIN must be exactly 6 digits.')
 
         if User.query.filter_by(username=username).first():
-            return render_template('register.html', error='Username already taken. Choose another.')
+            return render_err('Username already taken. Choose another.')
         
         if email:
             existing = User.query.filter(User.email == email).first()
             if existing:
-                return render_template('register.html', error='Email already registered.')
+                return render_err('Email already registered.')
+
 
         user = User(
             username=username,

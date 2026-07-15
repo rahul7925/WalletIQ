@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+{% block title %}{% if lang == 'ta' %}நிதி ஆரோக்கியம் — WalletIQ{% else %}Financial Health — WalletIQ{% endif %}{% endblock %}
+
+{% block extra_style %}
+.health-container {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 24px;
+  align-items: start;
+}
+.gauge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px;
+  position: relative;
+}
+.gauge-svg-wrap {
+  width: 200px;
+  height: 200px;
+  position: relative;
+  margin: 16px 0;
+}
+.gauge-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.gauge-bg {
+  fill: none;
+  stroke: var(--surface3);
+  stroke-width: 8;
+}
+.gauge-fill {
+  fill: none;
+  stroke: url(#gauge-grad);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s ease-out;
+}
+.gauge-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.gauge-score {
+  font-family: var(--font-mono);
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+.gauge-total {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-top: 12px;
+}
+.risk-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.param-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+.param-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.param-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-1px);
+}
+.param-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.param-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.param-icon {
+  font-size: 18px;
+}
+.param-name {
+  font-size: 13.5px;
+  font-weight: 550;
+  color: var(--text);
+}
+.param-weight {
+  font-size: 11px;
+  color: var(--text3);
+  margin-left: 6px;
+}
+.param-score-badge {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.score-high { background: var(--green-dim); color: var(--green); }
+.score-mid { background: var(--gold-dim); color: var(--gold2); }
+.score-low { background: var(--red-dim); color: var(--red); }
+
+.param-metrics {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 8px;
+}
+.param-metric-val {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--text);
+}
+
+.recommendations-card {
+  border: 1px solid var(--gold-dim);
+  background: radial-gradient(ellipse at 50% 0%, var(--gold-glow) 0%, transparent 80%), var(--surface);
+}
+.rec-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+.rec-item:last-child {
+  border-bottom: none;
+}
+.rec-bullet {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold-dim);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.rec-text {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text2);
+}
+.chart-card {
+  padding: 24px 28px;
+}
+@media (max-width: 1024px) {
+  .health-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-eyebrow">{% if lang == 'ta' %}செயற்கை நுண்ணறிவு பகுப்பாய்வு{% else %}AI FINANCIAL ANALYTICS{% endif %}</div>
+    <div class="page-title">{% if lang == 'ta' %}நிதி ஆரோக்கியம்{% else %}Financial Health Score{% endif %}</div>
+    <div class="page-subtitle">
+      {% if lang == 'ta' %}உங்கள் நிதி நிலைமையின் விரிவான மதிப்பீடு மற்றும் பரிந்துரைகள்{% else %}Detailed diagnostic evaluation and improvement suggestions based on your habits{% endif %}
+    </div>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-secondary btn-sm" onclick="openModal('quick-edit-modal')">✎ {% if lang == 'ta' %}மதிப்புகளைத் திருத்து{% else %}Update Metrics{% endif %}</button>
+  </div>
+</div>
+
+<div class="health-container">
+  
+  <!-- Left Side: Circular Gauge & Detailed Cards -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- Overall Score Gauge Card -->
+    <div class="card gauge-card">
+      <div class="card-title" style="align-self: flex-start; margin-bottom: 8px;">{% if lang == 'ta' %}ஒட்டுமொத்த மதிப்பெண்{% else %}Overall Health Score{% endif %}</div>
+      
+      <div class="gauge-svg-wrap">
+        <svg class="gauge-svg" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="gauge-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#E2C98A" />
+              <stop offset="100%" stop-color="#C8A96E" />
+            </linearGradient>
+          </defs>
+          <circle class="gauge-bg" cx="50" cy="50" r="42" />
+          <circle class="gauge-fill" id="gaugeFill" cx="50" cy="50" r="42" stroke-dasharray="263.89" stroke-dashoffset="263.89" />
+        </svg>
+        <div class="gauge-center-text">
+          <span class="gauge-score">{{ health_data.score }}</span>
+          <span class="gauge-total">/ 100</span>
+        </div>
+      </div>
+      
+      <div class="risk-badge" style="background: {{ health_data.risk_color }}18; color: {{ health_data.risk_color }};">
+        <span class="risk-dot" style="background: {{ health_data.risk_color }};"></span>
+        {% if lang == 'ta' %}
+          {% if health_data.risk_level == 'Excellent' %}மிகவும் நன்று
+          {% elif health_data.risk_level == 'Healthy' %}ஆரோக்கியமானது
+          {% elif health_data.risk_level == 'Needs Attention' %}கவனம் தேவை
+          {% else %}மிகவும் ஆபத்தானது{% endif %}
+        {% else %}
+          {{ health_data.risk_level }}
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Detailed KPI Breakdown -->
+    <div class="card" style="padding: 24px 28px;">
+      <div class="card-title">{% if lang == 'ta' %}ஆரோக்கிய குறிகாட்டிகள்{% else %}Diagnostic Parameters{% endif %}</div>
+      
+      <div class="param-list">
+        
+        <!-- savings rate -->
+        <div class="param-card">
+          <div class="param-header">
+            <div class="param-title-wrap">
+              <span class="param-icon">💰</span>
+              <span class="param-name">{% if lang == 'ta' %}சேமிப்பு விகிதம்{% else %}Savings Rate{% endif %}<span class="param-weight">30% {% if lang == 'ta' %}பங்கு{% else %}weight{% endif %}</span></span>
+            </div>
+            <span class="param-score-badge {% if health_data.savings_rate_score >= 70 %}score-high{% elif health_data.savings_rate_score >= 40 %}score-mid{% else %}score-low{% endif %}">
+              {{ health_data.savings_rate_score }}
+            </span>
+          </div>
+          <div class="progress">
+            <div class="progress-fill" style="width: {{ health_data.savings_rate_score }}%; background: {% if health_data.savings_rate_score >= 70 %}var(--green){% elif health_data.savings_rate_score >= 40 %}var(--gold){% else %}var(--red){% endif %};"></div>
+          </div>
+          <div class="param-metrics">
+            <span>{% if lang == 'ta' %}வருமான சேமிப்பு{% else %}Savings Out of Income{% endif %}</span>
+            <span class="param-metric-val">{{ health_data.savings_rate }}% (Target: 30%)</span>
+          </div>
+        </div>
+
+        <!-- budget adherence -->
+        <div class="param-card">
+          <div class="param-header">
+            <div class="param-title-wrap">
+              <span class="param-icon">🎯</span>
+              <span class="param-name">{% if lang == 'ta' %}பட்ஜெட் கட்டுப்பாடு{% else %}Budget Adherence{% endif %}<span class="param-weight">20% {% if lang == 'ta' %}பங்கு{% else %}weight{% endif %}</span></span>
+            </div>
+            <span class="param-score-badge {% if health_data.budget_score >= 70 %}score-high{% elif health_data.budget_score >= 40 %}score-mid{% else %}score-low{% endif %}">
+              {{ health_data.budget_score }}
+            </span>
+          </div>
+          <div class="progress">
+            <div class="progress-fill" style="width: {{ health_data.budget_score }}%; background: {% if health_data.budget_score >= 70 %}var(--green){% elif health_data.budget_score >= 40 %}var(--gold){% else %}var(--red){% endif %};"></div>
+          </div>
+          <div class="param-metrics">
+            <span>{% if lang == 'ta' %}பட்ஜெட் நிலை{% else %}Budget Adherence Status{% endif %}</span>
+            <span class="param-metric-val">{% if health_data.budget_score == 100 %}{% if lang == 'ta' %}வரம்பிற்குள் உள்ளது{% else %}On Target{% endif %}{% else %}{% if lang == 'ta' %}மீறப்பட்டுள்ளது{% else %}Overspent{% endif %}{% endif %}</span>
+          </div>
+        </div>
+
+        <!-- expense control -->
+        <div class="param-card">
+          <div class="param-header">
+            <div class="param-title-wrap">
+              <span class="param-icon">💳</span>
+              <span class="param-name">{% if lang == 'ta' %}செலவு கட்டுப்பாடு{% else %}Expense Control{% endif %}<span class="param-weight">20% {% if lang == 'ta' %}பங்கு{% else %}weight{% endif %}</span></span>
+            </div>
+            <span class="param-score-badge {% if health_data.expense_control_score >= 70 %}score-high{% elif health_data.expense_control_score >= 40 %}score-mid{% else %}score-low{% endif %}">
+              {{ health_data.expense_control_score }}
+            </span>
+          </div>
+          <div class="progress">
+            <div class="progress-fill" style="width: {{ health_data.expense_control_score }}%; background: {% if health_data.expense_control_score >= 70 %}var(--green){% elif health_data.expense_control_score >= 40 %}var(--gold){% else %}var(--red){% endif %};"></div>
+          </div>
+          <div class="param-metrics">
+            <span>{% if lang == 'ta' %}செலவு மற்றும் வருமான விகிதம்{% else %}Expense-to-Income Ratio{% endif %}</span>
+            <span class="param-metric-val">{{ health_data.expense_ratio }}% (Target: &lt; 50%)</span>
+          </div>
+        </div>
+
+        <!-- investment ratio -->
+        <div class="param-card">
+          <div class="param-header">
+            <div class="param-title-wrap">
+              <span class="param-icon">📈</span>
+              <span class="param-name">{% if lang == 'ta' %}முதலீட்டு அளவு{% else %}Investment Ratio{% endif %}<span class="param-weight">20% {% if lang == 'ta' %}பங்கு{% else %}weight{% endif %}</span></span>
+            </div>
+            <span class="param-score-badge {% if health_data.investment_ratio_score >= 70 %}score-high{% elif health_data.investment_ratio_score >= 40 %}score-mid{% else %}score-low{% endif %}">
+              {{ health_data.investment_ratio_score }}
+            </span>
+          </div>
+          <div class="progress">
+            <div class="progress-fill" style="width: {{ health_data.investment_ratio_score }}%; background: {% if health_data.investment_ratio_score >= 70 %}var(--green){% elif health_data.investment_ratio_score >= 40 %}var(--gold){% else %}var(--red){% endif %};"></div>
+          </div>
+          <div class="param-metrics">
+            <span>{% if lang == 'ta' %}வருமானத்தில் முதலீடு{% else %}Invested Out of Income{% endif %}</span>
+            <span class="param-metric-val">{{ health_data.investment_ratio }}% (Target: 20%)</span>
+          </div>
+        </div>
+
+        <!-- emergency fund -->
+        <div class="param-card">
+          <div class="param-header">
+            <div class="param-title-wrap">
+              <span class="param-icon">🛡️</span>
+              <span class="param-name">{% if lang == 'ta' %}அவசர கால நிதி{% else %}Emergency Fund{% endif %}<span class="param-weight">10% {% if lang == 'ta' %}பங்கு{% else %}weight{% endif %}</span></span>
+            </div>
+            <span class="param-score-badge {% if health_data.emergency_fund_score >= 70 %}score-high{% elif health_data.emergency_fund_score >= 40 %}score-mid{% else %}score-low{% endif %}">
+              {{ health_data.emergency_fund_score }}
+            </span>
+          </div>
+          <div class="progress">
+            <div class="progress-fill" style="width: {{ health_data.emergency_fund_score }}%; background: {% if health_data.emergency_fund_score >= 70 %}var(--green){% elif health_data.emergency_fund_score >= 40 %}var(--gold){% else %}var(--red){% endif %};"></div>
+          </div>
+          <div class="param-metrics">
+            <span>{% if lang == 'ta' %}பாதுகாக்கப்பட்ட செலவு கால அளவு{% else %}Expenses Covered Period{% endif %}</span>
+            <span class="param-metric-val">{{ health_data.emergency_fund_months }} {% if lang == 'ta' %}மாதங்கள்{% else %}months{% endif %} (Target: 6m)</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Right Side: Trend Chart & AI Suggestions -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- AI Recommendations Card -->
+    <div class="card recommendations-card" style="padding: 24px 28px;">
+      <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--gold)">✦</span> 
+        {% if lang == 'ta' %}செயற்கை நுண்ணறிவு மேம்பாட்டு பரிந்துரைகள்{% else %}AI Financial Recommendations{% endif %}
+      </div>
+      <div style="margin-top: 18px;">
+        {% if recommendations %}
+          {% for rec in recommendations %}
+          <div class="rec-item">
+            <div class="rec-bullet">{{ loop.index }}</div>
+            <div class="rec-text">{{ rec }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: var(--text3); font-size: 13px;">{% if lang == 'ta' %}பரிந்துரைகள் எதுவும் இல்லை. உங்கள் செலவுகளைப் பதிவு செய்து மதிப்பெண்ணைக் கணக்கிடுங்கள்.{% else %}No recommendations available at this time. Update your details to generate tips.{% endif %}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Monthly Trend Line Chart -->
+    <div class="card chart-card">
+      <div class="card-title" style="margin-bottom: 20px;">{% if lang == 'ta' %}நிதி ஆரோக்கிய வரலாறு{% else %}Financial Health History{% endif %}</div>
+      <div style="position: relative; height: 230px;">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Quick Edit Modal -->
+<div class="modal-overlay" id="quick-edit-modal">
+  <div class="modal">
+    <div class="modal-title">
+      {% if lang == 'ta' %}அளவுருக்களைத் திருத்துக{% else %}Update Financial Profile{% endif %}
+      <span class="modal-close" onclick="closeModal('quick-edit-modal')">✕</span>
+    </div>
+    <form action="/settings" method="POST">
+      <input type="hidden" name="action" value="profile">
+      <!-- Hidden fields for other settings elements to avoid clearing them -->
+      <input type="hidden" name="full_name" value="{{ current_user.full_name or '' }}">
+      <input type="hidden" name="email" value="{{ current_user.email or '' }}">
+      <input type="hidden" name="language" value="{{ current_user.language }}">
+      <input type="hidden" name="monthly_budget" value="{{ current_user.monthly_budget }}">
+
+      <div class="form-grid" style="gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'ta' %}மாதாந்திர வருமானம் (₹){% else %}Monthly Income (₹){% endif %}</label>
+          <input class="form-control" type="number" name="monthly_income" value="{{ current_user.monthly_income or '' }}" placeholder="e.g. 50000" style="font-family: var(--font-mono);" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'ta' %}அவசர கால சேமிப்பு (₹){% else %}Emergency Savings (₹){% endif %}</label>
+          <input class="form-control" type="number" name="emergency_savings" value="{{ current_user.emergency_savings or '' }}" placeholder="e.g. 150000" style="font-family: var(--font-mono);" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" style="justify-content: center; margin-top: 8px;">
+          {% if lang == 'ta' %}சேமிக்கவும்{% else %}Save Changes{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Animate circular gauge fill
+  const score = {{ health_data.score }};
+  const circumference = 263.89; // 2 * PI * 42
+  const offset = circumference - (score / 100) * circumference;
+  
+  setTimeout(() => {
+    const fill = document.getElementById("gaugeFill");
+    if (fill) {
+      fill.style.strokeDashoffset = offset;
+    }
+  }, 150);
+
+  // Render Historical Trend Chart
+  const labels = {{ history_labels|tojson }};
+  const data = {{ history_scores|tojson }};
+  
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  
+  const TIP_OPTS = {
+    backgroundColor: '#1A1A28',
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    titleColor: '#F0EEE6',
+    bodyColor: '#A8A49C',
+    padding: 10,
+    cornerRadius: 8,
+  };
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '{% if lang == 'ta' %}மதிப்பெண்{% else %}Health Score{% endif %}',
+        data: data,
+        borderColor: '#C8A96E',
+        backgroundColor: 'rgba(200,169,110,0.07)',
+        fill: true,
+        tension: 0.35,
+        pointBackgroundColor: '#C8A96E',
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        borderWidth: 2.5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...TIP_OPTS }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6B6760' }
+        },
+        y: {
+          min: 0,
+          max: 100,
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#6B6760' },
+          border: { display: false }
+        }
+      }
+    }
+  });
+});
+
+// Modal helpers (fallbacks if base.html helpers aren't in window context)
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.add('open');
+}
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.remove('open');
+}
+</script>
+{% endblock %}

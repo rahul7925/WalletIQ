@@ -231,9 +231,10 @@
 
 <script>
   // Load values from backend
-  const userIncome = {{ result.requested_amount > 0 and (result.eligible_amount / ( (result.estimated_emi > 0) ? (result.eligible_amount / result.estimated_emi) : 60 )) or 50000.0 }}; // estimated
+  const userIncome = {{ (result and result.requested_amount > 0 and (result.eligible_amount / ( (result.eligible_amount / result.estimated_emi) if result.estimated_emi > 0 else 60 ))) or 50000.0 }}; // estimated
   // Actually we can read properties directly from result dictionary or simulate them
-  const maxLimitBase = {{ result.eligible_amount }};
+  const maxLimitBase = {{ (result and result.eligible_amount) or 100000.0 }};
+
   
   let chartInstance = null;
 

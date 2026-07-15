@@ -71,9 +71,10 @@
         <div class="info-row"><span style="color:var(--text3)">Username</span><span style="font-family:var(--font-mono)">{{ current_user.username }}</span></div>
         <div class="info-row"><span style="color:var(--text3)">Member since</span><span>{{ current_user.created_at.strftime("%d %b %Y") }}</span></div>
         <div class="info-row"><span style="color:var(--text3)">Language</span><span>{{ "&#x1F1EE;&#x1F1F3; Tamil" if current_user.language == "ta" else "&#x1F1EC;&#x1F1E7; English" }}</span></div>
-        <div style="margin-top:16px"><a href="/export/csv" class="btn btn-ghost" style="width:100%;justify-content:center">&#x2193; Export expenses as CSV</a></div>
+        <div style="margin-top:16px"><a href="/export/pdf" class="btn btn-ghost" style="width:100%;justify-content:center">&#x2193; Export expenses as PDF</a></div>
       </div>
     </div>
+
   </div>
 </div>
 {% endblock %}

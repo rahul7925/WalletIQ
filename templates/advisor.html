@@ -741,8 +741,9 @@ function appendMsg(role, html, rawText = '') {
 
   const actions = role === 'ai' ? `
     <div class="msg-actions">
-      <button class="msg-action-btn" title="Copy" onclick="copyMsg(this, ${JSON.stringify(rawText)})">📋</button>
+      <button class="msg-action-btn" title="Copy" data-text="${escapeAttr(rawText)}" onclick="copyMsg(this, this.dataset.text)">📋</button>
     </div>` : '';
+
 
   d.innerHTML = `
     <div class="msg-av ${role}">${role === 'ai' ? '🤖' : '👤'}</div>
@@ -828,5 +829,13 @@ function escapeHtml(t) {
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
            .replace(/\n/g,'<br>');
 }
+function escapeAttr(t) {
+  return (t || '').replace(/&/g, '&amp;')
+                  .replace(/'/g, '&#39;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;');
+}
 </script>
+
 {% endblock %}

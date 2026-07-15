@@ -164,9 +164,10 @@
     </div>
   </div>
   <div class="page-actions">
-    <a href="/export/csv" class="btn btn-ghost btn-sm">↓ Export CSV</a>
+    <a href="/export/pdf" class="btn btn-ghost btn-sm">↓ Export PDF</a>
   </div>
 </div>
+
 
 <!-- Command Center Active Alerts -->
 {% if notifications %}
@@ -420,7 +421,21 @@ const catLabels  = {{ stats.cat_totals.keys()|list|tojson }};
 const catAmounts = {{ stats.cat_totals.values()|list|tojson }};
 const mLabels    = {{ stats.monthly_keys|tojson }};
 const mAmounts   = {{ stats.monthly_vals|tojson }};
-const PAL = ['#C8A96E','#5B8FD4','#4CAF82','#8B6FD4','#E05A5A','#E2C98A','#6BA3BE','#A87C52','#72A48E','#9B7FCC'];
+const CAT_COLORS = {
+  'Food': '#FFD75A',
+  'Bills': '#5B8CFF',
+  'Travel': '#5CD46B',
+  'Entertainment': '#B57CFF',
+  'Shopping': '#FF6B6B',
+  'Health': '#83C5C0',
+  'Investment': '#2ECC71',
+  'Education': '#FFAA54',
+  'Transport': '#4FA2E6',
+  'Others': '#7EE7F5',
+  'General': '#7EE7F5'
+};
+const getColors = (labels) => labels.map(l => CAT_COLORS[l] || '#7EE7F5');
+
 
 const TIP_OPTS = {
   backgroundColor:'#1A1A28',
@@ -437,11 +452,13 @@ new Chart(document.getElementById('barChart'), {
   type:'bar',
   data:{labels:catLabels,datasets:[{
     data:catAmounts,
-    backgroundColor:PAL.slice(0,catLabels.length),
-    borderRadius:6,borderSkipped:false,barThickness:28
+    backgroundColor:getColors(catLabels),
+    hoverBackgroundColor:getColors(catLabels).map(c => c + 'EE'),
+    borderRadius:{topLeft:10,topRight:10,bottomLeft:0,bottomRight:0},barThickness:28
   }]},
   options:{
     responsive:true,maintainAspectRatio:false,
+    animation:{duration:1000,easing:'easeOutQuart'},
     plugins:{legend:{display:false},tooltip:{...TIP_OPTS,callbacks:{label:c=>' ₹'+Number(c.raw).toLocaleString('en-IN')}}},
     scales:{
       x:{grid:{display:false},ticks:{color:'#6B6760'}},
@@ -455,13 +472,15 @@ new Chart(document.getElementById('doughnutChart'), {
   type:'doughnut',
   data:{labels:catLabels,datasets:[{
     data:catAmounts,
-    backgroundColor:PAL.slice(0,catLabels.length),
-    borderColor:'#0A0A0F',borderWidth:3,hoverOffset:6
+    backgroundColor:getColors(catLabels),
+    borderColor:'#0A0A0F',borderWidth:3,hoverOffset:8
   }]},
+
   options:{
     responsive:true,maintainAspectRatio:false,cutout:'68%',
+    animation:{duration:1000,easing:'easeOutQuart'},
     plugins:{
-      legend:{position:'bottom',labels:{padding:14,font:{size:11},boxWidth:10,color:'#A8A49C',borderRadius:4}},
+      legend:{position:'bottom',labels:{padding:16,font:{size:11,weight:'500'},boxWidth:10,color:'#A8A49C',borderRadius:4}},
       tooltip:{...TIP_OPTS,callbacks:{label:c=>' ₹'+Number(c.raw).toLocaleString('en-IN')}}
     }
   }

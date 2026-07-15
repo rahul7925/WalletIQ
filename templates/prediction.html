@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+{% block title %}{% if lang == 'ta' %}நிதி கணிப்பு — WalletIQ{% else %}Future Projections — WalletIQ{% endif %}{% endblock %}
+
+{% block extra_style %}
+.pred-container {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 24px;
+  align-items: start;
+}
+.control-card {
+  padding: 24px 28px;
+}
+.scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.scenario-card {
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.scenario-card.mod-card {
+  border-color: var(--gold);
+  background: radial-gradient(ellipse at 50% 0%, var(--gold-glow) 0%, transparent 80%), var(--surface);
+}
+.scenario-card.agg-card {
+  border-color: var(--green-dim);
+  background: radial-gradient(ellipse at 50% 0%, rgba(76,175,130,0.06) 0%, transparent 80%), var(--surface);
+}
+.scenario-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+.scenario-card.mod-card .scenario-lbl { color: var(--gold); }
+.scenario-card.agg-card .scenario-lbl { color: var(--green); }
+
+.scenario-val {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 6px 0;
+}
+.scenario-subval {
+  font-size: 11.5px;
+  color: var(--text2);
+}
+.suggestions-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px 28px;
+}
+.suggestion-bullet-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+.sugg-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+.sugg-item:last-child {
+  border-bottom: none;
+}
+.sugg-bullet {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold-dim);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.sugg-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text2);
+}
+.charts-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.chart-card {
+  padding: 24px 28px;
+}
+.slider-val-bubble {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 500;
+}
+.slider-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+@media (max-width: 1200px) {
+  .scenarios-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+@media (max-width: 1024px) {
+  .pred-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-eyebrow">{% if lang == 'ta' %}எதிர்கால முன்கணிப்பு{% else %}FUTURE WEALTH PROJECTIONS{% endif %}</div>
+    <div class="page-title">{% if lang == 'ta' %}வருங்கால சேமிப்பு கணிப்பு{% else %}Savings & Cash Flow Projections{% endif %}</div>
+    <div class="page-subtitle">
+      {% if lang == 'ta' %}செயற்கை நுண்ணறிவு மற்றும் புள்ளிவிவர மாதிரிகள் மூலம் உங்கள் நிதி வளர்ச்சியை முன்கூட்டியே கணக்கிடுங்கள்{% else %}Predict your long-term asset growth and monthly cash flows using statistical models{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Scenarios Cards Overview -->
+<div class="scenarios-grid">
+  <!-- Conservative -->
+  <div class="card scenario-card">
+    <div>
+      <div class="scenario-lbl">{% if lang == 'ta' %}குறைந்தபட்ச கணிப்பு{% else %}Conservative Scenario{% endif %}</div>
+      <div class="scenario-val" style="color: var(--text2)">₹{{ "{:,.0f}".format(projection_data.scenarios.conservative.final_net_worth) }}</div>
+    </div>
+    <div class="scenario-subval">
+      {% if lang == 'ta' %}சேமிப்பு: {% else %}Savings: {% endif %}₹{{ "{:,.0f}".format(projection_data.scenarios.conservative.final_savings) }}
+    </div>
+  </div>
+
+  <!-- Moderate -->
+  <div class="card scenario-card mod-card">
+    <div>
+      <div class="scenario-lbl">{% if lang == 'ta' %}மிதமான கணிப்பு{% else %}Moderate Scenario{% endif %}</div>
+      <div class="scenario-val" style="color: var(--gold2)">₹{{ "{:,.0f}".format(projection_data.scenarios.moderate.final_net_worth) }}</div>
+    </div>
+    <div class="scenario-subval">
+      {% if lang == 'ta' %}சேமிப்பு: {% else %}Savings: {% endif %}₹{{ "{:,.0f}".format(projection_data.scenarios.moderate.final_savings) }}
+    </div>
+  </div>
+
+  <!-- Aggressive -->
+  <div class="card scenario-card agg-card">
+    <div>
+      <div class="scenario-lbl">{% if lang == 'ta' %}அதிகபட்ச கணிப்பு{% else %}Aggressive Scenario{% endif %}</div>
+      <div class="scenario-val" style="color: var(--green)">₹{{ "{:,.0f}".format(projection_data.scenarios.aggressive.final_net_worth) }}</div>
+    </div>
+    <div class="scenario-subval">
+      {% if lang == 'ta' %}சேமிப்பு: {% else %}Savings: {% endif %}₹{{ "{:,.0f}".format(projection_data.scenarios.aggressive.final_savings) }}
+    </div>
+  </div>
+</div>
+
+<div class="pred-container">
+  
+  <!-- Left Column: Controls & AI Suggestions -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- Prediction Control Panel -->
+    <div class="card control-card">
+      <div class="card-title" style="margin-bottom: 20px;">{% if lang == 'ta' %}கணிப்பு காரணிகள்{% else %}Projection Parameters{% endif %}</div>
+      
+      <form method="POST">
+        <div class="form-grid" style="gap: 18px;">
+          
+          <div class="form-group">
+            <div class="slider-container">
+              <label class="form-label">{% if lang == 'ta' %}கணிப்பு கால அளவு (மாதங்கள்){% else %}Forecast Horizon{% endif %}</label>
+              <span class="slider-val-bubble" id="horizonVal">{{ horizon_months }}m</span>
+            </div>
+            <input class="form-control" type="range" name="horizon_months" min="12" max="120" step="12" value="{{ horizon_months }}" oninput="document.getElementById('horizonVal').innerText = this.value + 'm'">
+          </div>
+
+          <div class="form-group">
+            <div class="slider-container">
+              <label class="form-label">{% if lang == 'ta' %}வருடாந்திர வருமான வளர்ச்சி (%){% else %}Expected Annual Income Growth (%){% endif %}</label>
+              <span class="slider-val-bubble" id="growthVal">{{ salary_growth }}%</span>
+            </div>
+            <input class="form-control" type="range" name="salary_growth" min="0" max="30" step="0.5" value="{{ salary_growth }}" oninput="document.getElementById('growthVal').innerText = this.value + '%'">
+          </div>
+
+          <div class="form-group">
+            <div class="slider-container">
+              <label class="form-label">{% if lang == 'ta' %}வருடாந்திர பணவீக்க விகிதம் (%){% else %}Expected Annual Inflation (%){% endif %}</label>
+              <span class="slider-val-bubble" id="inflationVal">{{ inflation_rate }}%</span>
+            </div>
+            <input class="form-control" type="range" name="inflation_rate" min="0" max="20" step="0.5" value="{{ inflation_rate }}" oninput="document.getElementById('inflationVal').innerText = this.value + '%'">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{% if lang == 'ta' %}கணிப்பு முறை{% else %}Prediction Engine Method{% endif %}</label>
+            <select class="form-control" name="method" style="border-radius:8px">
+              <option value="formula" {% if method == 'formula' %}selected{% endif %}>
+                {% if lang == 'ta' %}சூத்திர அடிப்படையிலான கணிப்பு (Formula-based){% else %}Mathematical Formula (Asset Compounding){% endif %}
+              </option>
+              <option value="ml" {% if method == 'ml' %}selected{% endif %}>
+                {% if lang == 'ta' %}இயந்திர கற்றல் நேரியல் பின்னடைவு (ML Linear Regression){% else %}Machine Learning (Linear Regression on History){% endif %}
+              </option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" style="justify-content:center; margin-top: 8px;">
+            {% if lang == 'ta' %}முன்கணிப்பை இயக்கு{% else %}Calculate Projection{% endif %}
+          </button>
+
+        </div>
+      </form>
+    </div>
+
+    <!-- AI Projection Suggestions -->
+    <div class="card suggestions-card">
+      <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--gold)">✦</span>
+        {% if lang == 'ta' %}செயற்கை நுண்ணறிவு கணிப்பு ஆலோசனைகள்{% else %}AI Future Wealth Insights{% endif %}
+      </div>
+      <div class="suggestion-bullet-wrap">
+        {% if suggestions %}
+          {% for sugg in suggestions %}
+          <div class="sugg-item">
+            <div class="sugg-bullet">{{ loop.index }}</div>
+            <div class="sugg-text">{{ sugg }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: var(--text3); font-size: 13px;">{% if lang == 'ta' %}பரிந்துரைகள் எதுவும் இல்லை. மதிப்புகளை மாற்றி இயக்கவும்.{% else %}No recommendations generated yet.{% endif %}</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right Column: Interactive Charts -->
+  <div class="charts-stack">
+    
+    <!-- Net Worth Projections Chart -->
+    <div class="card chart-card">
+      <div class="card-title" style="margin-bottom: 20px;">{% if lang == 'ta' %}வருங்கால நிகர மதிப்பு வளர்ச்சி (Net Worth Growth Timeline){% else %}Future Net Worth Growth Timeline{% endif %}</div>
+      <div style="position: relative; height: 260px;">
+        <canvas id="networthChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Moderate Cash Flow Bar Chart -->
+    <div class="card chart-card">
+      <div class="card-title" style="margin-bottom: 20px;">{% if lang == 'ta' %}மாதாந்திர பணப்புழக்கம் கணிப்பு (மிதமான சூழல்){% else %}Monthly Cash Flow Projections (Moderate Scenario){% endif %}</div>
+      <div style="position: relative; height: 260px;">
+        <canvas id="cashflowChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const months = {{ projection_data.months|tojson }};
+  
+  // Net worth datasets
+  const conNW = {{ projection_data.scenarios.conservative.net_worth|tojson }};
+  const modNW = {{ projection_data.scenarios.moderate.net_worth|tojson }};
+  const aggNW = {{ projection_data.scenarios.aggressive.net_worth|tojson }};
+
+  // Moderate Cash Flow datasets
+  const modInc = {{ projection_data.scenarios.moderate.monthly_income|tojson }};
+  const modExp = {{ projection_data.scenarios.moderate.monthly_expenses|tojson }};
+  const modSav = {{ projection_data.scenarios.moderate.monthly_savings|tojson }};
+
+  const TIP_OPTS = {
+    backgroundColor: '#1A1A28',
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    titleColor: '#F0EEE6',
+    bodyColor: '#A8A49C',
+    padding: 10,
+    cornerRadius: 8,
+  };
+
+  // 1. Line Chart: Net Worth Growth
+  const nwCtx = document.getElementById('networthChart').getContext('2d');
+  new Chart(nwCtx, {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: '{% if lang == 'ta' %}அதிகபட்ச கணிப்பு{% else %}Aggressive Scenario{% endif %}',
+          data: aggNW,
+          borderColor: '#4CAF82',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.1
+        },
+        {
+          label: '{% if lang == 'ta' %}மிதமான கணிப்பு{% else %}Moderate Scenario{% endif %}',
+          data: modNW,
+          borderColor: '#C8A96E',
+          backgroundColor: 'transparent',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          tension: 0.1
+        },
+        {
+          label: '{% if lang == 'ta' %}குறைந்தபட்ச கணிப்பு{% else %}Conservative Scenario{% endif %}',
+          data: conNW,
+          borderColor: '#6B6760',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { color: '#A8A49C', boxWidth: 12, font: { size: 10 } }
+        },
+        tooltip: {
+          ...TIP_OPTS,
+          callbacks: {
+            label: c => ' ' + c.dataset.label + ': ₹' + Number(c.raw).toLocaleString('en-IN')
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6B6760', maxTicksLimit: 12 }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#6B6760',
+            callback: v => '₹' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'))
+          },
+          border: { display: false }
+        }
+      }
+    }
+  });
+
+  // 2. Bar Chart: Moderate Cash Flow Projections
+  const cfCtx = document.getElementById('cashflowChart').getContext('2d');
+  new Chart(cfCtx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: '{% if lang == 'ta' %}வருமானம்{% else %}Income{% endif %}',
+          data: modInc,
+          backgroundColor: 'rgba(91,143,212,0.7)',
+          borderRadius: 4,
+          barThickness: 6
+        },
+        {
+          label: '{% if lang == 'ta' %}செலவுகள்{% else %}Expenses{% endif %}',
+          data: modExp,
+          backgroundColor: 'rgba(224,90,90,0.7)',
+          borderRadius: 4,
+          barThickness: 6
+        },
+        {
+          label: '{% if lang == 'ta' %}சேமிப்பு{% else %}Savings{% endif %}',
+          data: modSav,
+          backgroundColor: 'rgba(76,175,130,0.7)',
+          borderRadius: 4,
+          barThickness: 6
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { color: '#A8A49C', boxWidth: 12, font: { size: 10 } }
+        },
+        tooltip: {
+          ...TIP_OPTS,
+          callbacks: {
+            label: c => ' ' + c.dataset.label + ': ₹' + Number(c.raw).toLocaleString('en-IN')
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6B6760', maxTicksLimit: 12 }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#6B6760',
+            callback: v => '₹' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'))
+          },
+          border: { display: false }
+        }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

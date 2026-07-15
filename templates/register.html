@@ -105,11 +105,11 @@ body::before {
     <form method="POST">
       <div class="lang-row">
         <label class="lang-opt">
-          <input type="radio" name="language" value="en" checked>
+          <input type="radio" name="language" value="en" {% if language == 'en' or not language %}checked{% endif %}>
           <div class="lang-card"><span class="lang-flag">🇬🇧</span><div><span class="lang-en">English</span><span class="lang-native">English</span></div><div class="lang-check">✓</div></div>
         </label>
         <label class="lang-opt">
-          <input type="radio" name="language" value="ta">
+          <input type="radio" name="language" value="ta" {% if language == 'ta' %}checked{% endif %}>
           <div class="lang-card"><span class="lang-flag">🇮🇳</span><div><span class="lang-en">Tamil</span><span class="lang-native">தமிழ்</span></div><div class="lang-check">✓</div></div>
         </label>
       </div>
@@ -124,14 +124,14 @@ body::before {
             <label>Full Name</label>
             <div class="field-wrap">
               <span class="field-icon">✏️</span>
-              <input type="text" name="full_name" placeholder="Your name">
+              <input type="text" name="full_name" placeholder="Your name" value="{{ full_name or '' }}">
             </div>
           </div>
           <div class="form-group">
             <label>Username *</label>
             <div class="field-wrap">
               <span class="field-icon">@</span>
-              <input type="text" name="username" placeholder="username" required minlength="3" id="uname" oninput="checkUser(this)">
+              <input type="text" name="username" placeholder="username" required minlength="3" id="uname" oninput="checkUser(this)" value="{{ username or '' }}">
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ body::before {
           <label>Email (optional)</label>
           <div class="field-wrap">
             <span class="field-icon">✉️</span>
-            <input type="email" name="email" placeholder="you@email.com">
+            <input type="email" name="email" placeholder="you@email.com" value="{{ email or '' }}">
           </div>
         </div>
 
@@ -171,10 +171,11 @@ body::before {
           <label>6-Digit Recovery PIN * (For Password Reset)</label>
           <div class="field-wrap">
             <span class="field-icon">🔢</span>
-            <input type="password" name="recovery_pin" id="pin" placeholder="Exactly 6 digits" required maxlength="6" pattern="\d{6}" autocomplete="off">
+            <input type="password" name="recovery_pin" id="pin" placeholder="Exactly 6 digits" required maxlength="6" pattern="\d{6}" autocomplete="off" value="{{ recovery_pin or '' }}">
           </div>
         </div>
       </div>
+
 
 
       <button type="submit" class="btn-submit" style="margin-top:20px">Create account</button>

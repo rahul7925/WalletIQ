@@ -112,8 +112,9 @@ def generate_financial_alerts(user_id: int):
     # 4. Spike Alerts
     # Analyze if food/shopping category spending spiked by > 40% compared to average weekly spending
     # Let's count recent expenses
-    one_week_ago = now - timedelta(days=7)
+    one_week_ago = (now - timedelta(days=7)).replace(tzinfo=None)
     this_week_expenses = [e for e in this_month_expenses if e.created_at >= one_week_ago]
+
     week_totals = {}
     for e in this_week_expenses:
         week_totals[e.category] = week_totals.get(e.category, 0.0) + e.amount

@@ -273,28 +273,29 @@
     <div class="stat-card">
       <div class="sc-icon">📄</div>
       <div class="sc-label">Reports Generated</div>
-      <div class="sc-val">{{ stats.total_generated }}</div>
+      <div class="sc-val">{{ storage_stats.total_generated }}</div>
       <div class="sc-sub">All time</div>
     </div>
     <div class="stat-card">
       <div class="sc-icon">📥</div>
       <div class="sc-label">Total Downloads</div>
-      <div class="sc-val">{{ stats.total_downloaded }}</div>
+      <div class="sc-val">{{ storage_stats.total_downloaded }}</div>
       <div class="sc-sub">Across all reports</div>
     </div>
     <div class="stat-card">
       <div class="sc-icon">💾</div>
       <div class="sc-label">Storage Used</div>
-      <div class="sc-val">{{ stats.storage_mb }} MB</div>
-      <div class="sc-sub">{{ "{:,.0f}".format(stats.storage_bytes / 1024) }} KB</div>
+      <div class="sc-val">{{ storage_stats.storage_mb }} MB</div>
+      <div class="sc-sub">{{ "{:,.0f}".format(storage_stats.storage_bytes / 1024) }} KB</div>
     </div>
     <div class="stat-card">
       <div class="sc-icon">🕐</div>
       <div class="sc-label">Last Generated</div>
-      <div class="sc-val" style="font-size:15px;">{{ stats.last_generated }}</div>
+      <div class="sc-val" style="font-size:15px;">{{ storage_stats.last_generated }}</div>
       <div class="sc-sub">IST</div>
     </div>
   </div>
+
 
   <!-- ── Primary Layout ── -->
   <div class="studio-layout">
