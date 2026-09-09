@@ -148,6 +148,11 @@ if db_url:
     elif db_url.startswith('postgres://'):
         db_url = db_url.replace('postgres://', 'postgresql://', 1)
 
+    # Strip ssl-mode from MySQL URL query string to prevent PyMySQL Connection TypeError
+    if 'mysql' in db_url and 'ssl-mode' in db_url:
+        import re
+        db_url = re.sub(r'[?&]ssl-mode=[^&]+', '', db_url)
+
     # Ensure charset=utf8mb4 is enforced on MySQL connections to prevent emoji/multilingual failures
     if 'mysql' in db_url and 'charset=' not in db_url:
         separator = '&' if '?' in db_url else '?'
@@ -215,6 +220,9 @@ if not is_sqlite:
     if mysql_ssl_ca:
         connect_args['ssl'] = {'ca': mysql_ssl_ca}
         log.info(f"Database connection SSL enabled using CA: {mysql_ssl_ca}")
+    elif 'aivencloud.com' in app.config.get('SQLALCHEMY_DATABASE_URI', '') or os.environ.get('DB_SSL_REQUIRED', '').lower() in ('true', '1'):
+        connect_args['ssl'] = {'ssl': True, 'check_hostname': False}
+        log.info("Aiven cloud database SSL enabled automatically")
     engine_options['connect_args'] = connect_args
 
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options

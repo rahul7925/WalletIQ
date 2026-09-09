@@ -96,6 +96,14 @@ class TestDeploymentReadiness(unittest.TestCase):
             call_url = str(mock_create_engine.call_args[0][0])
             self.assertTrue(call_url.startswith('postgresql://'))
 
+        # Test Aiven mysql:// with ssl-mode stripping and connect_args
+        with patch.dict(os.environ, {'DATABASE_URL': 'mysql://avnadmin:pwd@mysql-walletiq-test.aivencloud.com:12345/defaultdb?ssl-mode=REQUIRED'}, clear=False):
+            _get_db_engine()
+            call_url = str(mock_create_engine.call_args[0][0])
+            self.assertNotIn('ssl-mode', call_url)
+            self.assertIn('charset=utf8mb4', call_url)
+            self.assertTrue(mock_create_engine.call_args[1]['connect_args']['ssl']['ssl'])
+
 
 if __name__ == '__main__':
     unittest.main()

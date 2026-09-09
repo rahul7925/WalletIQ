@@ -30,6 +30,19 @@ def _get_db_engine():
             db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
         elif db_url.startswith('postgres://'):
             db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
+        connect_args = {}
+        if 'mysql' in db_url:
+            import re
+            db_url = re.sub(r'[?&]ssl-mode=[^&]+', '', db_url)
+            if 'charset=' not in db_url:
+                separator = '&' if '?' in db_url else '?'
+                db_url = f"{db_url}{separator}charset=utf8mb4"
+            if 'aivencloud.com' in db_url or os.environ.get('DB_SSL_REQUIRED', '').lower() in ('true', '1'):
+                connect_args['ssl'] = {'ssl': True, 'check_hostname': False}
+
+        if connect_args:
+            return create_engine(db_url, pool_pre_ping=True, connect_args=connect_args)
         return create_engine(db_url, pool_pre_ping=True)
 
     required = ['MYSQL_HOST', 'MYSQL_PORT', 'MYSQL_USER', 'MYSQL_PASSWORD', 'MYSQL_DATABASE']
