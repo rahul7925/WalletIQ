@@ -128,46 +128,102 @@ VITE_API_BASE_URL=https://your-backend.up.railway.app
 
 ---
 
-## 🚀 Deployment Guide
+## 🚀 Free-Tier Deployment Guide ($0/Month Forever)
 
-### 1. Backend on Railway
-1. Create a new project on [Railway](https://railway.app).
-2. Add a **MySQL** database service.
-3. Deploy the repository from GitHub.
-4. Set environment variables in Railway:
-   - `DATABASE_URL`: Set to `${{ MySQL.DATABASE_URL }}` (or provide host, user, password, database).
-   - `SECRET_KEY`: Generate a random 64-char string.
-   - `CORS_ORIGINS`: Add your Vercel deployment URL (e.g. `https://your-walletiq.vercel.app`).
-   - `GEMINI_API_KEY`: Your Google Gemini API key.
-5. Railway will detect `railway.json` / `Procfile`, automatically execute database migrations (`flask db upgrade`), and start Gunicorn on `wsgi:app`.
-6. Note your Railway public URL (e.g., `https://walletiq-api.up.railway.app`).
+WalletIQ X is architected to run **100% free** without trial expirations or credit card requirements using:
+- **Frontend**: **Vercel** (Free Hobby Tier)
+- **Backend**: **Render** (Free Web Service Tier)
+- **Database**: **TiDB Cloud Serverless** (Free 5GB MySQL 8.0) or **Neon** (Free 0.5GB PostgreSQL 16)
 
-### 2. Frontend on Vercel
-1. Import your repository into [Vercel](https://vercel.com).
-2. Set the **Root Directory** to `frontend`.
-3. Framework Preset: **Vite**.
-4. In Environment Variables, add:
-   - `VITE_API_BASE_URL`: Set to your Railway backend URL (e.g. `https://walletiq-api.up.railway.app`).
-5. Click **Deploy**. Vercel will build the SPA and route all traffic using `vercel.json`.
+---
+
+### Step 1: Provision Free Database (0 Cost, No Card Required)
+
+#### Option A: TiDB Cloud Serverless (Recommended — 5 GB Free MySQL 8.0)
+1. Sign up at [tidbcloud.com](https://tidbcloud.com) (No credit card required).
+2. Create a **TiDB Cloud Starter (Serverless)** cluster.
+3. Click **Connect** → Choose **PyMySQL** (or General Connection).
+4. Copy the connection string. It looks like:
+   `mysql+pymysql://<user>:<password>@gateway01.<region>.prod.aws.tidbcloud.com:4000/<db>?ssl_verify_cert=true&ssl_verify_identity=true`
+
+#### Option B: Neon Serverless (0.5 GB Free PostgreSQL 16)
+1. Sign up at [neon.tech](https://neon.tech) (No credit card required).
+2. Create a project.
+3. Copy your pooled connection string:
+   `postgresql://<user>:<password>@<endpoint>.neon.tech/<db>?sslmode=require`
+
+---
+
+### Step 2: Deploy Backend on Render (Free Web Service)
+
+1. Sign up at [render.com](https://render.com) using your GitHub account.
+2. Click **New +** → **Web Service**.
+3. Connect your **`WalletIQ`** repository.
+4. Render will read [`render.yaml`](file:///c:/walletIQ/WalletIQ-main/render.yaml) or you can configure manually:
+   - **Environment**: `Python`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `flask db upgrade && gunicorn --config gunicorn.conf.py wsgi:app`
+   - **Plan**: **Free** ($0/month)
+5. Under **Environment Variables**, add:
+   - `DATABASE_URL`: Your connection string from Step 1.
+   - `SECRET_KEY`: Generate a random 64-character key (e.g. via `python -c "import secrets; print(secrets.token_hex(32))"`).
+   - `GEMINI_API_KEY`: Your Google Gemini API key from [Google AI Studio](https://aistudio.google.com).
+   - `CORS_ORIGINS`: `http://localhost:3000` *(you will update this with your Vercel URL in Step 4)*.
+   - `SESSION_COOKIE_SECURE`: `true`
+   - `BEHIND_PROXY`: `true`
+   - `FLASK_ENV`: `production`
+6. Click **Create Web Service**.
+7. Once deployed, note your Render URL (e.g., `https://walletiq-api.onrender.com`).
+8. Verify health check: `https://your-app.onrender.com/health`.
+
+> [!NOTE]
+> **Render Free Tier Cold Starts**: Render's free tier sleeps after 15 minutes of inactivity. When accessed after sleeping, the first request takes ~30–45s to spin up. The frontend includes an automatic `ServerWakeupBanner` notifying users while the container starts.
+
+---
+
+### Step 3: Deploy Frontend on Vercel ($0/Month)
+
+1. Sign up at [vercel.com](https://vercel.com) using your GitHub account.
+2. Click **Add New...** → **Project**.
+3. Import the **`WalletIQ`** repository.
+4. Configure:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `frontend`
+5. In **Environment Variables**, add:
+   - `VITE_API_BASE_URL`: Your Render backend URL from Step 2 (e.g., `https://walletiq-api.onrender.com`).
+6. Click **Deploy**.
+7. Copy your live Vercel domain (e.g., `https://walletiq.vercel.app`).
+
+---
+
+### Step 4: Link Vercel to Render CORS
+
+1. Go back to your [Render Dashboard](https://dashboard.render.com) → Backend Web Service → **Environment**.
+2. Update `CORS_ORIGINS` to include your Vercel domain:
+   ```env
+   CORS_ORIGINS=https://walletiq.vercel.app,http://localhost:3000
+   ```
+3. Render will redeploy automatically.
 
 ---
 
 ## 🧪 Testing & Verification
 
-Run the full test suite (unit tests, integration tests, REST API endpoints, and IDOR isolation tests):
+Run the full regression test suite (all 91 tests passing):
 
 ```bash
 # Activate virtual environment
-source .venv/bin/activate  # Windows: .\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1  # Linux/macOS: source .venv/bin/activate
 
-# Run all 82 tests
+# Run all 91 tests
 pytest -v
 
-# Run REST API suite specifically
-pytest -v test_api_v1.py
+# Run REST API and database resilience tests specifically
+pytest -v test_api_v1.py test_database_resilience.py test_deployment.py
 ```
 
 ---
 
 ## 📄 License
 This project is licensed under the MIT License.
+

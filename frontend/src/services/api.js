@@ -26,6 +26,33 @@ export function setStoredToken(token) {
   }
 }
 
+let wakingTimer = null;
+let activeRequests = 0;
+
+function onRequestStart() {
+  activeRequests++;
+  if (activeRequests === 1) {
+    wakingTimer = setTimeout(() => {
+      try {
+        window.dispatchEvent(new CustomEvent('walletiq:server-waking'));
+      } catch {}
+    }, 3000);
+  }
+}
+
+function onRequestEnd() {
+  activeRequests = Math.max(0, activeRequests - 1);
+  if (activeRequests === 0) {
+    if (wakingTimer) {
+      clearTimeout(wakingTimer);
+      wakingTimer = null;
+    }
+    try {
+      window.dispatchEvent(new CustomEvent('walletiq:server-ready'));
+    } catch {}
+  }
+}
+
 async function request(endpoint, options = {}) {
   const url = `${API_PREFIX}${endpoint}`;
   const token = getStoredToken();
@@ -44,42 +71,48 @@ async function request(endpoint, options = {}) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-    credentials: 'include',
-  });
-
-  // Handle file downloads
-  const contentType = response.headers.get('content-type') || '';
-  if (contentType.includes('application/pdf') || contentType.includes('application/vnd.openxmlformats') || contentType.includes('text/csv')) {
-    if (!response.ok) {
-      throw new Error(`File download failed with status ${response.status}`);
-    }
-    return response.blob();
-  }
-
-  let json;
+  onRequestStart();
   try {
-    json = await response.json();
-  } catch (err) {
-    if (!response.ok) {
-      throw new Error(`Server returned HTTP ${response.status}`);
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include',
+    });
+
+    // Handle file downloads
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/pdf') || contentType.includes('application/vnd.openxmlformats') || contentType.includes('text/csv')) {
+      if (!response.ok) {
+        throw new Error(`File download failed with status ${response.status}`);
+      }
+      return response.blob();
     }
-    throw new Error('Invalid JSON response from server');
-  }
 
-  if (!response.ok || json.success === false) {
-    const errorMsg = json.error?.message || json.message || `Request failed (${response.status})`;
-    const error = new Error(errorMsg);
-    error.status = response.status;
-    error.code = json.error?.code || 'ERROR';
-    error.details = json.error?.details || null;
-    throw error;
-  }
+    let json;
+    try {
+      json = await response.json();
+    } catch (err) {
+      if (!response.ok) {
+        throw new Error(`Server returned HTTP ${response.status}`);
+      }
+      throw new Error('Invalid JSON response from server');
+    }
 
-  return json.data;
+    if (!response.ok || json.success === false) {
+      const errorMsg = json.error?.message || json.message || `Request failed (${response.status})`;
+      const error = new Error(errorMsg);
+      error.status = response.status;
+      error.code = json.error?.code || 'ERROR';
+      error.details = json.error?.details || null;
+      throw error;
+    }
+
+    return json.data;
+  } finally {
+    onRequestEnd();
+  }
 }
+
 
 export const api = {
   // ── 1. Authentication ──────────────────────────────────────────────────────

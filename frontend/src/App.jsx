@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import Modal from './components/Modal';
+import ServerWakeupBanner from './components/ServerWakeupBanner';
 import { api } from './services/api';
 
 // Pages
@@ -84,6 +85,7 @@ export default function App() {
 
   return (
     <>
+      <ServerWakeupBanner />
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} />

@@ -3,8 +3,7 @@ services:
     name: walletiq
     runtime: python
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: flask db upgrade
-    startCommand: gunicorn --config gunicorn.conf.py app:app
+    startCommand: flask db upgrade && gunicorn --config gunicorn.conf.py wsgi:app
     healthCheckPath: /health
     autoDeploy: true
     envVars:
@@ -14,9 +13,17 @@ services:
         generateValue: true
       - key: SESSION_COOKIE_SECURE
         value: "true"
+      - key: BEHIND_PROXY
+        value: "true"
       - key: WEB_CONCURRENCY
         value: "2"
+      - key: GUNICORN_THREADS
+        value: "2"
       - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: GEMINI_API_KEY
         sync: false
       - key: MYSQL_HOST
         sync: false
@@ -28,5 +35,4 @@ services:
         sync: false
       - key: MYSQL_DATABASE
         sync: false
-      - key: GEMINI_API_KEY
-        sync: false
+
