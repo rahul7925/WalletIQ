@@ -131,7 +131,7 @@ def predict_loan_eligibility(user_id: int, requested_amount: float, tenure_month
         train_loan_model()
     model.load(MODEL_PATH)
             
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return {}
         

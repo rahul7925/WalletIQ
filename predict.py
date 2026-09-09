@@ -18,24 +18,42 @@ warnings.filterwarnings('ignore')
 load_dotenv()
 
 
-def _mysql_engine():
+def _get_db_engine():
+    db_url = (
+        os.environ.get('DATABASE_URL') or 
+        os.environ.get('MYSQL_URL') or 
+        os.environ.get('JAWSDB_URL') or 
+        os.environ.get('CLEARDB_DATABASE_URL')
+    )
+    if db_url:
+        if db_url.startswith('mysql://'):
+            db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
+        elif db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        return create_engine(db_url, pool_pre_ping=True)
+
     required = ['MYSQL_HOST', 'MYSQL_PORT', 'MYSQL_USER', 'MYSQL_PASSWORD', 'MYSQL_DATABASE']
     missing = [k for k in required if not os.environ.get(k)]
-    if missing:
-        raise RuntimeError(f"Missing MySQL env vars: {', '.join(missing)}")
+    if not missing:
+        user = quote_plus(os.environ['MYSQL_USER'])
+        pwd = quote_plus(os.environ['MYSQL_PASSWORD'])
+        host = os.environ['MYSQL_HOST']
+        port = int(os.environ['MYSQL_PORT'])
+        db = os.environ['MYSQL_DATABASE']
+        uri = f"mysql+pymysql://{user}:{pwd}@{host}:{port}/{db}?charset=utf8mb4"
+        return create_engine(uri, pool_pre_ping=True)
 
-    user = quote_plus(os.environ['MYSQL_USER'])
-    pwd = quote_plus(os.environ['MYSQL_PASSWORD'])
-    host = os.environ['MYSQL_HOST']
-    port = int(os.environ['MYSQL_PORT'])
-    db = os.environ['MYSQL_DATABASE']
-    uri = f"mysql+pymysql://{user}:{pwd}@{host}:{port}/{db}?charset=utf8mb4"
-    return create_engine(uri, pool_pre_ping=True)
+    # Local fallback for development/testing
+    inst_db = os.path.join(os.path.abspath('instance'), 'walletiq_fallback.db').replace('\\', '/')
+    if os.path.exists(inst_db):
+        return create_engine(f"sqlite:///{inst_db}")
+
+    raise RuntimeError(f"Missing database configuration. Provide DATABASE_URL or MySQL env vars: {', '.join(missing)}")
 
 
 def main():
     try:
-        engine = _mysql_engine()
+        engine = _get_db_engine()
         data = pd.read_sql_query(
             text("""
                 SELECT id, title, amount, category, created_at

@@ -2,7 +2,7 @@ def compute_financial_health(user_id: int) -> dict:
     from app import db, User, Expense, Budget, Investment, Bill, ist_now
 
     now = ist_now()
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return {}
 

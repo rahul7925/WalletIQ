@@ -11,7 +11,7 @@ from app import db, Expense, Goal, ist_now
 
 def calculate_goal_progress_analytics(goal: Goal) -> dict:
     from app import User
-    user = User.query.get(goal.user_id)
+    user = db.session.get(User, goal.user_id)
     if not user:
         return {'success_probability': 50.0, 'est_completion_date': goal.deadline}
 

@@ -61,7 +61,17 @@ if not log.handlers:
 app = Flask(__name__, template_folder='templates', static_folder='templates/static')
 
 # ── Security Config ────────────────────────────────────────────────────────────
-app.secret_key = os.environ.get('SECRET_KEY', os.urandom(32).hex())
+_raw_secret = os.environ.get('SECRET_KEY')
+if not _raw_secret:
+    if os.environ.get('FLASK_ENV') == 'production':
+        log.warning(
+            "SECURITY WARNING: 'SECRET_KEY' is not set in environment! "
+            "A transient key was generated; user sessions will be invalidated on server/worker restart. "
+            "Set a permanent SECRET_KEY in production."
+        )
+    _raw_secret = os.urandom(32).hex()
+app.secret_key = _raw_secret
+
 app.config['SESSION_COOKIE_HTTPONLY']  = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
@@ -73,8 +83,51 @@ app.config['SESSION_COOKIE_SECURE']   = secure_cookie
 
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7  # 7 days
 
-# ── Database Config — MySQL / SQLite ───────────────────────────────────────────
-# Reads connection settings from .env (checks unified URL first, then individual parameters, then fallback).
+# ── Reverse Proxy Support (ProxyFix) ──────────────────────────────────────────
+# Resolves client real IP and HTTPS scheme behind Render, Railway, AWS ALB, Nginx, etc.
+# Crucial for accurate auth rate limiting and HTTPS session cookies.
+if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('BEHIND_PROXY', '').lower() in ('true', '1'):
+    try:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+        log.info("ProxyFix middleware enabled for reverse proxy support")
+    except Exception as exc:
+        log.warning(f"Could not initialize ProxyFix middleware: {exc}")
+
+# ── Security Headers ───────────────────────────────────────────────────────────
+@app.after_request
+def set_security_headers(response):
+    response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+    response.headers.setdefault('X-XSS-Protection', '1; mode=block')
+    response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    if request.is_secure:
+        response.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    return response
+
+# ── CORS Configuration (Vercel Frontend + Local Vite Dev) ─────────────────────
+from flask_cors import CORS
+cors_env = os.environ.get('CORS_ORIGINS')
+if cors_env:
+    allowed_origins = [o.strip() for o in cors_env.split(',') if o.strip()]
+else:
+    allowed_origins = [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'https://walletiq.vercel.app',
+    ]
+
+CORS(
+    app,
+    resources={r"/api/*": {"origins": allowed_origins}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization", "X-Session-Token", "Accept"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
+
+# ── Database Config — MySQL / PostgreSQL / SQLite ─────────────────────────────
+# Reads connection settings from environment (checks unified URL first, then individual parameters, then fallback).
 # Supported env URLs: DATABASE_URL, MYSQL_URL, JAWSDB_URL, CLEARDB_DATABASE_URL
 # Required fallback env vars: MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
 
@@ -89,9 +142,17 @@ db_url = (
 )
 
 if db_url:
-    # Ensure driver is set to mysql+pymysql if it's a mysql URL scheme
+    # Normalize common cloud URL schemes
     if db_url.startswith('mysql://'):
         db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
+    elif db_url.startswith('postgres://'):
+        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
+    # Ensure charset=utf8mb4 is enforced on MySQL connections to prevent emoji/multilingual failures
+    if 'mysql' in db_url and 'charset=' not in db_url:
+        separator = '&' if '?' in db_url else '?'
+        db_url = f"{db_url}{separator}charset=utf8mb4"
+
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     log.info("Database URI configured from unified connection URL")
 else:
@@ -121,8 +182,10 @@ else:
         # Zero-configuration local database fallback (SQLite) in development
         if os.environ.get('FLASK_ENV') != 'production':
             log.warning(f"MySQL env vars missing: {', '.join(missing)}. Falling back to SQLite local database.")
-            os.makedirs('instance', exist_ok=True)
-            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/walletiq_fallback.db'
+            inst_dir = os.path.abspath('instance')
+            os.makedirs(inst_dir, exist_ok=True)
+            db_abs_path = os.path.join(inst_dir, 'walletiq_fallback.db').replace('\\', '/')
+            app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_abs_path}'
         else:
             raise RuntimeError(
                 f"Missing database configuration. Provide DATABASE_URL/MYSQL_URL or separate MySQL env vars: {', '.join(missing)}"
@@ -130,22 +193,43 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# MySQL / Database engine options
+# Database engine pooling & connection options
+is_sqlite = app.config.get('SQLALCHEMY_DATABASE_URI', '').startswith('sqlite')
 engine_options = {
     'pool_pre_ping': True,
-    'pool_recycle': 300,
+    'pool_recycle': int(os.environ.get('DB_POOL_RECYCLE', '280')),
+    'pool_reset_on_return': 'rollback',
 }
+if not is_sqlite:
+    engine_options['pool_size'] = int(os.environ.get('DB_POOL_SIZE', '10'))
+    engine_options['max_overflow'] = int(os.environ.get('DB_MAX_OVERFLOW', '20'))
+    engine_options['pool_timeout'] = int(os.environ.get('DB_POOL_TIMEOUT', '30'))
 
-# SSL support (e.g. for AWS RDS, GCP Cloud SQL, or DigitalOcean)
-mysql_ssl_ca = os.environ.get('MYSQL_SSL_CA')
-if mysql_ssl_ca:
-    engine_options['connect_args'] = {'ssl': {'ca': mysql_ssl_ca}}
-    log.info(f"Database connection SSL enabled using CA: {mysql_ssl_ca}")
+    # PyMySQL socket timeouts to prevent hanging connection locks in cloud containers
+    connect_args = {
+        'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '10')),
+        'read_timeout': int(os.environ.get('DB_READ_TIMEOUT', '30')),
+        'write_timeout': int(os.environ.get('DB_WRITE_TIMEOUT', '30')),
+    }
+    mysql_ssl_ca = os.environ.get('MYSQL_SSL_CA')
+    if mysql_ssl_ca:
+        connect_args['ssl'] = {'ca': mysql_ssl_ca}
+        log.info(f"Database connection SSL enabled using CA: {mysql_ssl_ca}")
+    engine_options['connect_args'] = connect_args
 
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+@app.teardown_request
+def teardown_request_cleanup(exception=None):
+    """Roll back any uncommitted transaction on exception to prevent session pollution."""
+    if exception is not None:
+        try:
+            db.session.rollback()
+        except Exception as exc:
+            log.warning(f"Error rolling back session in teardown_request: {exc}")
 
 if _WALLETIQ_DB_DIAGNOSTIC:
     with app.app_context():
@@ -351,6 +435,7 @@ class Expense(db.Model):
     __tablename__ = 'expense'
     __table_args__ = (
         db.Index('idx_expense_user_date', 'user_id', 'created_at'),  # fast per-user queries
+        db.Index('idx_expense_user_cat', 'user_id', 'category'),
     )
     id           = db.Column(db.Integer, primary_key=True)
     title        = db.Column(db.String(200), nullable=False)
@@ -366,6 +451,7 @@ class Budget(db.Model):
     __tablename__ = 'budget'
     __table_args__ = (
         db.UniqueConstraint('user_id', 'category', 'month', 'year', name='uq_budget_user_cat_month'),
+        db.Index('idx_budget_user_month_year', 'user_id', 'month', 'year'),
     )
     id       = db.Column(db.Integer, primary_key=True)
     category = db.Column(db.String(100), nullable=False)
@@ -379,6 +465,7 @@ class Investment(db.Model):
     __tablename__ = 'investment'
     __table_args__ = (
         db.Index('idx_investment_user', 'user_id'),
+        db.Index('idx_investment_user_type', 'user_id', 'type'),
     )
     id            = db.Column(db.Integer, primary_key=True)
     name          = db.Column(db.String(200), nullable=False)
@@ -396,6 +483,7 @@ class Bill(db.Model):
     __tablename__ = 'bill'
     __table_args__ = (
         db.Index('idx_bill_user', 'user_id'),
+        db.Index('idx_bill_user_paid_due', 'user_id', 'is_paid', 'due_date'),
     )
     id             = db.Column(db.Integer, primary_key=True)
     name           = db.Column(db.String(200), nullable=False)
@@ -421,6 +509,7 @@ class Notification(db.Model):
     __tablename__ = 'notification'
     __table_args__ = (
         db.Index('idx_notification_user', 'user_id'),
+        db.Index('idx_notification_user_unread', 'user_id', 'is_read', 'created_at'),
     )
     id           = db.Column(db.Integer, primary_key=True)
     user_id      = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
@@ -617,6 +706,18 @@ def load_user(user_id):
     return db.session.get(User, uid)
 
 
+@login_manager.request_loader
+def load_user_from_request(req):
+    """Loads user from Authorization Bearer token or X-Session-Token header for REST API requests."""
+    from auth_token import get_token_from_request, verify_auth_token
+    token = get_token_from_request()
+    if token:
+        uid = verify_auth_token(token)
+        if uid:
+            return db.session.get(User, uid)
+    return None
+
+
 @app.context_processor
 def inject_nav_stats():
     """Lightweight overdue-bill count for sidebar badge on all pages."""
@@ -728,6 +829,87 @@ from services.savings_prediction import compute_savings_prediction
 # ══════════════════════════════════════════════════════════════════════════════
 # ROUTES
 # ══════════════════════════════════════════════════════════════════════════════
+
+# ── Register REST API Blueprint (v1) ──────────────────────────────────────────
+from api_v1 import api_v1
+app.register_blueprint(api_v1)
+
+# ── Centralized API Error Handlers ────────────────────────────────────────────
+from api_response import error_response
+
+@app.errorhandler(400)
+def handle_400(e):
+    if request.path.startswith('/api/'):
+        return error_response("BAD_REQUEST", str(e.description if hasattr(e, 'description') else "Bad request"), 400)
+    return e
+
+@app.errorhandler(401)
+def handle_401(e):
+    if request.path.startswith('/api/'):
+        return error_response("UNAUTHORIZED", "Authentication required", 401)
+    return redirect('/login')
+
+@app.errorhandler(403)
+def handle_403(e):
+    if request.path.startswith('/api/'):
+        return error_response("FORBIDDEN", "You do not have permission to access this resource", 403)
+    return e
+
+@app.errorhandler(404)
+def handle_404(e):
+    if request.path.startswith('/api/'):
+        return error_response("NOT_FOUND", "The requested API resource was not found", 404)
+    return e
+
+@app.errorhandler(422)
+def handle_422(e):
+    if request.path.startswith('/api/'):
+        return error_response("UNPROCESSABLE_ENTITY", "Unable to process the request data", 422)
+    return e
+
+@app.errorhandler(429)
+def handle_429(e):
+    if request.path.startswith('/api/'):
+        return error_response("RATE_LIMITED", "Too many requests. Please slow down.", 429)
+    return e
+
+@app.errorhandler(500)
+def handle_500(e):
+    log.error(f"Internal server error on {request.path}: {e}")
+    if request.path.startswith('/api/'):
+        return error_response("INTERNAL_ERROR", "An unexpected server error occurred.", 500)
+    return e
+
+# ── Health Check / Liveness & Readiness Probes ────────────────────────────────
+@app.route('/health')
+@app.route('/healthz')
+@app.route('/api/health')
+def health_check():
+    """Unauthenticated health probe endpoint for Docker, Kubernetes, Render, Railway, AWS, etc."""
+    from db_resilience import ping_database
+    diag = ping_database()
+    is_ok = diag.get('healthy', False)
+    db_status = "connected" if is_ok else "disconnected"
+
+    payload = {
+        'success': is_ok,
+        'status': "ok" if is_ok else "degraded",
+        'timestamp': ist_now().isoformat(),
+        'services': {
+            'api': 'healthy',
+            'database': 'healthy' if is_ok else 'disconnected'
+        },
+        'database': db_status,
+        'database_diagnostics': {
+            'latency_ms': diag.get('latency_ms', 0),
+            'dialect': diag.get('dialect', 'unknown'),
+            'pool': diag.get('pool', {}),
+        },
+        'environment': os.environ.get('FLASK_ENV', 'production' if not app.debug else 'development'),
+        'version': '2.0.0'
+    }
+    status_code = 200 if is_ok else 503
+    return jsonify(payload), status_code
 
 # ── Dashboard ──────────────────────────────────────────────────────────────────
 @app.route('/')

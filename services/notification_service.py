@@ -37,7 +37,7 @@ def generate_financial_alerts(user_id: int):
     from services.financial_health import compute_financial_health
     
     now = ist_now()
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return
         

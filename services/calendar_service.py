@@ -2,10 +2,10 @@ from datetime import date
 import calendar
 
 def get_monthly_calendar_events(user_id: int, year: int, month: int) -> list:
-    from app import Bill, User, ist_now
+    from app import db, Bill, User, ist_now
     
     events = []
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return []
         

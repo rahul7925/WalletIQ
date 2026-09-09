@@ -1,14 +1,23 @@
 services:
   - type: web
     name: walletiq
-    env: python
+    runtime: python
     buildCommand: pip install -r requirements.txt
+    preDeployCommand: flask db upgrade
     startCommand: gunicorn --config gunicorn.conf.py app:app
+    healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY
         generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: DATABASE_URL
+        sync: false
       - key: MYSQL_HOST
         sync: false
       - key: MYSQL_PORT

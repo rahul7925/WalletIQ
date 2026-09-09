@@ -1,7 +1,7 @@
 def compute_savings_prediction(user_id: int, salary_growth: float = 8.0, inflation: float = 6.0, moderate_return: float = 10.0) -> dict:
     from app import db, User, Expense, Investment, ist_now
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return {}
 

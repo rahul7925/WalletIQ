@@ -148,7 +148,7 @@ def build_financial_context(user_id: int) -> str:
         from services.savings_prediction import compute_savings_prediction
         from datetime import date
 
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return ""
 

@@ -27,12 +27,12 @@ REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 
 def get_report_data(user_id: int, year: int, month: int) -> dict:
     """Aggregates all necessary statistics for report generation (income, expenses, budgets, loans, health, history)"""
-    from app import User, Expense, Budget, Investment, Bill, PredictionHistory, LoanPredictionHistory
+    from app import db, User, Expense, Budget, Investment, Bill, PredictionHistory, LoanPredictionHistory
     from services.financial_health import compute_financial_health
     from services.savings_prediction import compute_savings_prediction
     from services.loan_prediction import predict_loan_eligibility
     
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return {}
         

@@ -61,7 +61,7 @@ def get_months_difference(date1: date, date2: date) -> int:
     return (date2.year - date1.year) * 12 + date2.month - date1.month
 
 def recalculate_goal_targets(goal_id: int):
-    goal = Goal.query.get(goal_id)
+    goal = db.session.get(Goal, goal_id)
     if not goal:
         return
 

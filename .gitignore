@@ -7,25 +7,46 @@ __pycache__/
 # Virtual environments
 venv/
 .venv/
+ENV/
+env/
 
-# IDEs
+# IDEs & Editors
 .idea/
 .vscode/
+*.swp
+*.swo
 
-# Flask / DB / uploads
+# Flask / DB / uploads / logs
 instance/
+uploads/
+logs/*.log
 *.db
+*.sqlite
 *.sqlite3
 
-# Environment variables
-.env
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Local artifacts / model artifacts (optional: keep if you want to ship them)
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Local artifacts / model artifacts
 model.pkl
 vectorizer.pkl
 pipeline.pkl
 
+# Frontend & Node
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.npm
+package-lock.json
+
 # OS
 .DS_Store
 Thumbs.db
-

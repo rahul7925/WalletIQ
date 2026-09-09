@@ -86,7 +86,7 @@ class TestFinancialCommandCenter(unittest.TestCase):
         self.assertTrue(res['success'])
         
         # Check that bill is marked paid
-        bill = Bill.query.get(bill_id)
+        bill = db.session.get(Bill, bill_id)
         self.assertTrue(bill.is_paid)
         self.assertIsNotNone(bill.paid_date)
         
