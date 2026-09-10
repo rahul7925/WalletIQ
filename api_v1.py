@@ -356,7 +356,8 @@ def api_get_expenses():
     month = request.args.get('month', type=int)
     year = request.args.get('year', type=int)
     page = request.args.get('page', 1, type=int)
-    limit = min(request.args.get('limit', 20, type=int), 100)
+    per_page_arg = request.args.get('per_page', type=int)
+    limit = min(request.args.get('limit', per_page_arg or 20, type=int), 100)
 
     query = Expense.query.filter_by(user_id=user.id)
     if category and category != 'All':
@@ -383,12 +384,17 @@ def api_get_expenses():
         'date': e.created_at.strftime('%Y-%m-%d') if e.created_at else None,
     } for e in expenses]
 
+    total_pages = (total + limit - 1) // limit if limit else 1
+
     return success_response({
         'items': items,
+        'expenses': items,
         'total': total,
         'page': page,
         'limit': limit,
-        'pages': (total + limit - 1) // limit if limit else 1
+        'per_page': limit,
+        'pages': total_pages,
+        'total_pages': total_pages,
     }, "Expenses fetched", 200)
 
 
@@ -657,6 +663,7 @@ def api_get_investments():
         'name': i.name,
         'type': i.type,
         'category': i.type,
+        'amount': i.invested,
         'invested': i.invested,
         'current_value': i.current_value,
         'gain_loss': round(i.current_value - i.invested, 2),
@@ -667,10 +674,14 @@ def api_get_investments():
 
     return success_response({
         'items': items,
+        'investments': items,
         'total_invested': round(total_invested, 2),
         'total_current': round(total_current, 2),
+        'current_value': round(total_current, 2),
         'total_gain': round(total_gain, 2),
-        'gain_pct': gain_pct
+        'total_gain_loss': round(total_gain, 2),
+        'gain_pct': gain_pct,
+        'gain_loss_pct': gain_pct,
     }, "Investments fetched", 200)
 
 
@@ -685,8 +696,10 @@ def api_create_investment():
     inv_type = (data.get('type') or data.get('category') or 'Mutual Funds').strip()
 
     try:
-        invested = float(data.get('invested', 0))
-        current_val = float(data.get('current_value', invested))
+        raw_invested = data.get('invested') if data.get('invested') is not None else data.get('amount', 0)
+        invested = float(raw_invested or 0)
+        raw_current = data.get('current_value') if data.get('current_value') is not None else invested
+        current_val = float(raw_current or invested)
     except (TypeError, ValueError):
         return error_response("VALIDATION_ERROR", "Invalid numbers for invested/current value.", 400)
 
@@ -712,6 +725,7 @@ def api_create_investment():
         'name': inv.name,
         'type': inv.type,
         'category': inv.type,
+        'amount': inv.invested,
         'invested': inv.invested,
         'current_value': inv.current_value,
     }, "Investment added successfully", 201)
@@ -733,9 +747,10 @@ def api_update_investment(iid):
             inv.current_value = round(float(data['current_value']), 2)
         except ValueError:
             pass
-    if 'invested' in data:
+    raw_invested = data.get('invested') if 'invested' in data else data.get('amount')
+    if raw_invested is not None:
         try:
-            inv.invested = round(float(data['invested']), 2)
+            inv.invested = round(float(raw_invested), 2)
         except ValueError:
             pass
     if 'name' in data and data['name']:
@@ -756,6 +771,7 @@ def api_update_investment(iid):
         'name': inv.name,
         'type': inv.type,
         'category': inv.type,
+        'amount': inv.invested,
         'invested': inv.invested,
         'current_value': inv.current_value,
     }, "Investment updated successfully", 200)

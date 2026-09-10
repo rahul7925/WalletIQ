@@ -57,12 +57,13 @@ export default function ExpensesPage() {
       const params = { page, per_page: 15 };
       if (categoryFilter) params.category = categoryFilter;
       const data = await api.getExpenses(params);
-      setExpenses(data.expenses || []);
+      const list = data?.expenses || data?.items || [];
+      setExpenses(list);
       setPagination({
-        page: data.page,
-        per_page: data.per_page,
-        total: data.total,
-        total_pages: data.total_pages,
+        page: data?.page || page,
+        per_page: data?.per_page || data?.limit || 15,
+        total: data?.total ?? list.length,
+        total_pages: data?.total_pages || data?.pages || 1,
       });
     } catch (err) {
       console.error('Failed to load expenses', err);
@@ -176,6 +177,7 @@ export default function ExpensesPage() {
     const term = searchTerm.toLowerCase();
     return (
       (e.description && e.description.toLowerCase().includes(term)) ||
+      (e.title && e.title.toLowerCase().includes(term)) ||
       (e.category && e.category.toLowerCase().includes(term))
     );
   });
@@ -278,7 +280,7 @@ export default function ExpensesPage() {
                     <td>
                       <span className="badge badge-gold">{exp.category}</span>
                     </td>
-                    <td style={{ color: 'var(--text-primary)' }}>{exp.description || '—'}</td>
+                    <td style={{ color: 'var(--text-primary)' }}>{exp.description || exp.title || '—'}</td>
                     <td className="num-mono" style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-primary)' }}>
                       ₹{Number(exp.amount).toLocaleString()}
                     </td>

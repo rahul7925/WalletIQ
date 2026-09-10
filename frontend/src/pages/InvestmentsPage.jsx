@@ -27,12 +27,12 @@ export default function InvestmentsPage() {
     setIsLoading(true);
     try {
       const data = await api.getInvestments();
-      setInvestments(data.investments || []);
+      setInvestments(data?.investments || data?.items || []);
       setMetrics({
-        total_invested: data.total_invested || 0,
-        current_value: data.current_value || 0,
-        total_gain_loss: data.total_gain_loss || 0,
-        gain_loss_pct: data.gain_loss_pct || 0,
+        total_invested: data?.total_invested || 0,
+        current_value: data?.current_value || data?.total_current || 0,
+        total_gain_loss: data?.total_gain_loss ?? data?.total_gain ?? 0,
+        gain_loss_pct: data?.gain_loss_pct ?? data?.gain_pct ?? 0,
       });
     } catch (err) {
       console.error('Failed to load investments', err);
