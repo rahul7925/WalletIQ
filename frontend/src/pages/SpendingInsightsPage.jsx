@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, AlertTriangle, Repeat, TrendingUp, ShieldCheck, CheckCircle } from 'lucide-react';
 import StatCard from '../components/StatCard';
+import { CategoryDoughnutChart, CategoryBarChart } from '../components/Charts';
 import { api } from '../services/api';
 
 export default function SpendingInsightsPage() {
@@ -31,6 +32,11 @@ export default function SpendingInsightsPage() {
   const subscriptions = insights?.subscriptions || [];
   const fastestGrowing = insights?.fastest_growing_category || 'None';
   const recommendations = insights?.recommendations || [];
+  const rankedCategories = insights?.ranked_categories || [];
+  const categoryMap = rankedCategories.reduce((acc, curr) => {
+    acc[curr.category] = curr.amount;
+    return acc;
+  }, {});
 
   return (
     <div className="page-wrapper animate-fade">
@@ -71,6 +77,33 @@ export default function SpendingInsightsPage() {
           color="gold"
         />
       </div>
+
+      {/* Visual Analytics Grid: Category Donut & Expenditure Bar */}
+      {rankedCategories.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+          <div className="glass-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Category Distribution</h3>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Proportionate monthly allocation</span>
+              </div>
+              <span className="badge badge-gold">Pie/Donut</span>
+            </div>
+            <CategoryDoughnutChart categorySpending={categoryMap} height={240} />
+          </div>
+
+          <div className="glass-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Spending Ranks</h3>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Descending order of outflows</span>
+              </div>
+              <span className="badge badge-blue">Bar Chart</span>
+            </div>
+            <CategoryBarChart categorySpending={categoryMap} height={240} />
+          </div>
+        </div>
+      )}
 
       {/* Grid: Anomalies & Subscriptions */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>

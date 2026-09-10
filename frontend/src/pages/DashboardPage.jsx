@@ -14,6 +14,11 @@ import {
 } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import ProgressBar from '../components/ProgressBar';
+import {
+  CategoryBarChart,
+  CategoryDoughnutChart,
+  MonthlyTrendLineChart,
+} from '../components/Charts';
 import { api } from '../services/api';
 
 export default function DashboardPage({ onOpenAddExpense }) {
@@ -64,6 +69,10 @@ export default function DashboardPage({ onOpenAddExpense }) {
   const savingsRate = monthlyIncome > 0 ? Math.max(0, Math.round(((monthlyIncome - totalSpent) / monthlyIncome) * 100)) : 0;
   const overdueBills = data?.overdue_bills_count ?? data?.stats?.overdue_bills ?? stats?.overdue_bills ?? 0;
   const categorySpending = data?.category_spending || data?.stats?.cat_totals || stats?.cat_totals || {};
+  const monthlyKeys = data?.stats?.monthly_keys || stats?.monthly_keys || [];
+  const monthlyVals = data?.stats?.monthly_vals || stats?.monthly_vals || [];
+  const budgetData = data?.stats?.budget_data || stats?.budget_data || {};
+  const hasBudgetData = Object.keys(budgetData).length > 0;
 
   return (
     <div className="page-wrapper animate-fade">
@@ -123,57 +132,99 @@ export default function DashboardPage({ onOpenAddExpense }) {
         />
       </div>
 
-      {/* Main Content Grid: Budget Progress & Category Breakdown */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* Budget Utilization Card */}
-        <div className="glass-card">
-          <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.25rem' }}>
-            Overall Budget Utilization
-          </h3>
-          <ProgressBar
-            value={totalSpent}
-            max={monthlyBudget}
-            label={`Spent ₹${totalSpent.toLocaleString()} of ₹${monthlyBudget.toLocaleString()}`}
-          />
-          <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-            <div>
-              <span style={{ color: 'var(--text-muted)', display: 'block' }}>Monthly Allowance</span>
-              <strong className="num-mono" style={{ color: 'var(--text-primary)' }}>₹{monthlyBudget.toLocaleString()}</strong>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)', display: 'block' }}>Available Capacity</span>
-              <strong className="num-mono" style={{ color: 'var(--accent-green)' }}>
-                ₹{Math.max(0, monthlyBudget - totalSpent).toLocaleString()}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Top Spending Categories */}
+      {/* 2×2 Interactive Visual Analytics Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        {/* 1. Category Bar Chart */}
         <div className="glass-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Top Spending Categories</h3>
+            <div>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Spending by Category</h3>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Monthly distribution per category</span>
+            </div>
             <Link to="/expenses" style={{ fontSize: '0.8125rem', color: 'var(--accent-gold)' }}>
               View all
             </Link>
           </div>
+          <CategoryBarChart categorySpending={categorySpending} height={240} />
+        </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            {categorySpending && Object.keys(categorySpending).length > 0 ? (
-              Object.entries(categorySpending)
-                .slice(0, 5)
-                .map(([cat, amt], idx) => (
-                  <div key={idx}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>{cat}</span>
-                      <strong className="num-mono">₹{Number(amt).toLocaleString()}</strong>
-                    </div>
-                    <ProgressBar value={amt} max={totalSpent || 1} showPercent={false} />
+        {/* 2. Category Doughnut / Pie Chart */}
+        <div className="glass-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Category Breakdown</h3>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Proportional expense share</span>
+            </div>
+            <span className="badge badge-gold">Breakdown</span>
+          </div>
+          <CategoryDoughnutChart categorySpending={categorySpending} height={240} />
+        </div>
+
+        {/* 3. Monthly Trend Line Chart */}
+        <div className="glass-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Monthly Trend</h3>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>6-month expense progression</span>
+            </div>
+            <span className="badge badge-blue">Trajectory</span>
+          </div>
+          <MonthlyTrendLineChart monthlyKeys={monthlyKeys} monthlyVals={monthlyVals} height={240} />
+        </div>
+
+        {/* 4. Budget vs Actual & Allowance */}
+        <div className="glass-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Budget vs Actual</h3>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Category limits and allowances</span>
+            </div>
+            <Link to="/budget" className="btn btn-ghost btn-sm" style={{ color: 'var(--accent-gold)', padding: '4px 8px' }}>
+              <span>Manage</span>
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <ProgressBar
+              value={totalSpent}
+              max={monthlyBudget}
+              label={`Spent ₹${totalSpent.toLocaleString()} of ₹${monthlyBudget.toLocaleString()}`}
+            />
+            <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Allowance: ₹{monthlyBudget.toLocaleString()}</span>
+              <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>
+                Available: ₹{Math.max(0, monthlyBudget - totalSpent).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '150px', overflowY: 'auto' }}>
+            {hasBudgetData ? (
+              Object.entries(budgetData).slice(0, 5).map(([cat, b]) => (
+                <div key={cat}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>{cat}</span>
+                    <span className="num-mono" style={{ color: b.over ? 'var(--accent-red)' : 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 600 }}>
+                      ₹{Number(b.spent).toLocaleString()} / ₹{Number(b.budget).toLocaleString()}
+                    </span>
                   </div>
-                ))
+                  <ProgressBar value={b.spent} max={b.budget || 1} showPercent={false} color={b.over ? 'red' : 'gold'} />
+                </div>
+              ))
+            ) : categorySpending && Object.keys(categorySpending).length > 0 ? (
+              Object.entries(categorySpending).slice(0, 5).map(([cat, amt]) => (
+                <div key={cat}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>{cat}</span>
+                    <strong className="num-mono" style={{ fontSize: '0.75rem' }}>₹{Number(amt).toLocaleString()}</strong>
+                  </div>
+                  <ProgressBar value={amt} max={totalSpent || 1} showPercent={false} />
+                </div>
+              ))
             ) : (
-              <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                No category spending data for this month.
+              <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                No category spending recorded yet.
               </div>
             )}
           </div>
