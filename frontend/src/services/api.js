@@ -165,7 +165,7 @@ export const api = {
   getBillReminders: () => request('/bills/reminders', { method: 'GET' }),
 
   // ── 8. AI Financial Advisor ────────────────────────────────────────────────
-  sendChatMessage: (message) => request('/ai/chat', { method: 'POST', body: JSON.stringify({ message }) }),
+  sendChatMessage: (message) => request('/ai/chat', { method: 'POST', body: JSON.stringify({ message, question: message, prompt: message }) }),
   getChatContext: () => request('/ai/context', { method: 'GET' }),
   clearChatHistory: () => request('/ai/clear', { method: 'POST' }),
   getAiRecommendations: () => request('/ai/recommendations', { method: 'GET' }),

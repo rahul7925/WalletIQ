@@ -932,8 +932,8 @@ def api_ai_chat():
     from chatbot import ask_ai, build_financial_context
 
     user = _get_user()
-    data = request.get_json(silent=True) or request.form
-    question = (data.get('question') or '').strip()
+    data = request.get_json(silent=True) or request.form or {}
+    question = (data.get('question') or data.get('message') or data.get('prompt') or data.get('query') or '').strip()
     lang = data.get('lang', user.language or 'en')
     session_id = data.get('session_id') or f"user_{user.id}"
 
@@ -950,6 +950,8 @@ def api_ai_chat():
 
     return success_response({
         'reply': response_text,
+        'response': response_text,
+        'message': response_text,
         'session_id': session_id,
         'lang': lang,
     }, "AI response generated", 200)

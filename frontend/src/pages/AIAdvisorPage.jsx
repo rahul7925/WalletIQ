@@ -37,7 +37,7 @@ export default function AIAdvisorPage() {
 
     try {
       const res = await api.sendChatMessage(userMsg);
-      const aiReply = res?.response || res?.message || 'I analyzed your request. Everything looks in order.';
+      const aiReply = res?.reply || res?.response || res?.message || 'I analyzed your request. Everything looks in order.';
       setMessages((prev) => [
         ...prev,
         {

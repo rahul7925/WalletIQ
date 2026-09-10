@@ -299,6 +299,21 @@ class TestApiV1(unittest.TestCase):
         self.assertIn('category', ocr_data)
         self.assertIn('date', ocr_data)
 
+    # ── 8. AI Chat Endpoint ───────────────────────────────────────────────────
+    def test_ai_chat_accepts_message_key(self):
+        """Test AI chat accepts 'message' payload key as well as 'question'."""
+        token, user = self._register_user("chat_user", "ChatPass123!", "chat@example.com")
+        headers = {'Authorization': f'Bearer {token}'}
+
+        res = self.client.post('/api/v1/ai/chat', json={
+            'message': 'Analyze my spending trends'
+        }, headers=headers)
+        self.assertEqual(res.status_code, 200)
+        json_data = res.get_json()
+        self.assertTrue(json_data['success'])
+        self.assertIn('reply', json_data['data'])
+        self.assertIn('response', json_data['data'])
+
 
 if __name__ == '__main__':
     unittest.main()

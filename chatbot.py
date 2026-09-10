@@ -156,9 +156,11 @@ def build_financial_context(user_id: int) -> str:
         month_start = now.replace(day=1)
 
         # Monthly expenses this month
+        from datetime import datetime
+        month_start_dt = datetime(month_start.year, month_start.month, month_start.day)
         expenses_this_month = Expense.query.filter(
             Expense.user_id == user_id,
-            Expense.date >= month_start
+            Expense.created_at >= month_start_dt
         ).all()
         total_expenses = sum(e.amount for e in expenses_this_month)
 
@@ -171,8 +173,8 @@ def build_financial_context(user_id: int) -> str:
 
         # Investments
         investments = Investment.query.filter_by(user_id=user_id).all()
-        portfolio_value = sum(i.current_value for i in investments)
-        total_invested = sum(i.amount_invested for i in investments)
+        portfolio_value = sum(getattr(i, 'current_value', 0) or 0 for i in investments)
+        total_invested = sum(getattr(i, 'invested', getattr(i, 'amount_invested', 0)) or 0 for i in investments)
 
         # Bills
         unpaid_bills = Bill.query.filter_by(user_id=user_id, is_paid=False).all()
@@ -406,7 +408,8 @@ def _response_text(response) -> str:
 # ── Main Chat Entry Point ──────────────────────────────────────────────────────
 
 def ask_ai(question: str, lang: str = 'en',
-           session_id: str = 'default', user_id: int = None) -> str:
+           session_id: str = 'default', user_id: int = None,
+           user_context: str = None, **kwargs) -> str:
     """
     Main chatbot function. Accepts a user question and returns an AI response.
 
@@ -497,7 +500,8 @@ def ask_ai(question: str, lang: str = 'en',
 
 
     # Build user context from DB (the key personalisation step)
-    user_context = build_financial_context(user_id) if user_id else ""
+    if user_context is None:
+        user_context = build_financial_context(user_id) if user_id else ""
 
     quota_errors = 0
     last_err = None
