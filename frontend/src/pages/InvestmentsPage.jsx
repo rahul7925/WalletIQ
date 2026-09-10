@@ -7,9 +7,16 @@ import { api } from '../services/api';
 const ASSET_TYPES = ['Stocks', 'Mutual Funds', 'Gold', 'Real Estate', 'Crypto', 'Fixed Deposit', 'Other'];
 
 export default function InvestmentsPage() {
-  const [investments, setInvestments] = useState([]);
-  const [metrics, setMetrics] = useState({ total_invested: 0, current_value: 0, total_gain_loss: 0, gain_loss_pct: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedData = api.getCached ? api.getCached('/investments') : null;
+  const initialInvestments = cachedData?.investments || cachedData?.items || [];
+  const [investments, setInvestments] = useState(initialInvestments);
+  const [metrics, setMetrics] = useState({
+    total_invested: cachedData?.total_invested || 0,
+    current_value: cachedData?.current_value || cachedData?.total_current || 0,
+    total_gain_loss: cachedData?.total_gain_loss ?? cachedData?.total_gain ?? 0,
+    gain_loss_pct: cachedData?.gain_loss_pct ?? cachedData?.gain_pct ?? 0,
+  });
+  const [isLoading, setIsLoading] = useState(initialInvestments.length === 0);
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,7 +31,7 @@ export default function InvestmentsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function loadInvestments() {
-    setIsLoading(true);
+    if (investments.length === 0 && initialInvestments.length === 0) setIsLoading(true);
     try {
       const data = await api.getInvestments();
       setInvestments(data?.investments || data?.items || []);

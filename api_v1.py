@@ -274,17 +274,14 @@ def api_forgot_password():
 @api_v1.route('/dashboard/summary', methods=['GET'])
 @api_login_required
 def api_dashboard_summary():
-    from app import get_user_stats, Expense, Bill, Notification, ist_now
+    from app import get_user_stats, Notification, ist_now
     from services.financial_health import compute_financial_health
 
     user = _get_user()
-    stats = get_user_stats(user.id)
+    stats, records = get_user_stats(user.id, return_records=True)
 
-    # Recent transactions
-    recent = Expense.query.filter_by(user_id=user.id).order_by(
-        Expense.created_at.desc()
-    ).limit(10).all()
-
+    # Recent transactions sliced directly in memory from user expenses
+    sorted_expenses = sorted(records['expenses'], key=lambda x: x.created_at, reverse=True)
     recent_data = [{
         'id': e.id,
         'title': e.title,
@@ -293,10 +290,15 @@ def api_dashboard_summary():
         'category': e.category,
         'date': e.created_at.strftime('%Y-%m-%d') if e.created_at else None,
         'created_at': e.created_at.isoformat() if e.created_at else None,
-    } for e in recent]
+    } for e in sorted_expenses[:10]]
 
-    # Health score
-    health = compute_financial_health(user.id)
+    # Health score computed in-memory reusing already-fetched records
+    health = compute_financial_health(
+        user.id,
+        preloaded_expenses=records['expenses'],
+        preloaded_investments=records['investments'],
+        preloaded_budgets=records['budgets'],
+    )
 
     # Unread notifications count
     unread_notifs = Notification.query.filter_by(user_id=user.id, is_read=False).count()

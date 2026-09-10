@@ -17,15 +17,17 @@ import ProgressBar from '../components/ProgressBar';
 import { api } from '../services/api';
 
 export default function DashboardPage({ onOpenAddExpense }) {
-  const [data, setData] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedData = api.getCached ? api.getCached('/dashboard/summary') : null;
+  const cachedStats = api.getCached ? api.getCached('/dashboard/stats') : null;
+  const [data, setData] = useState(cachedData);
+  const [stats, setStats] = useState(cachedStats);
+  const [isLoading, setIsLoading] = useState(!cachedData);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
     async function loadDashboard() {
-      setIsLoading(false);
+      if (!data && !cachedData) setIsLoading(true);
       try {
         const [summaryRes, statsRes] = await Promise.all([
           api.getDashboardSummary(),
@@ -36,7 +38,7 @@ export default function DashboardPage({ onOpenAddExpense }) {
           setStats(statsRes);
         }
       } catch (err) {
-        if (isMounted) setError(err.message || 'Failed to load dashboard data');
+        if (isMounted && !data) setError(err.message || 'Failed to load dashboard data');
       } finally {
         if (isMounted) setIsLoading(false);
       }

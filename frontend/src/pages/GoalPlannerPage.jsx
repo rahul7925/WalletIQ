@@ -6,9 +6,11 @@ import StatCard from '../components/StatCard';
 import { api } from '../services/api';
 
 export default function GoalPlannerPage() {
-  const [goals, setGoals] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedGoals = api.getCached ? api.getCached('/goals') : null;
+  const initialGoals = cachedGoals?.goals || [];
+  const [goals, setGoals] = useState(initialGoals);
+  const [recommendations, setRecommendations] = useState(() => (api.getCached ? (api.getCached('/goals/recommendations')?.recommendations || []) : []));
+  const [isLoading, setIsLoading] = useState(initialGoals.length === 0);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -26,13 +28,13 @@ export default function GoalPlannerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function loadGoals() {
-    setIsLoading(true);
+    if (goals.length === 0 && initialGoals.length === 0) setIsLoading(true);
     try {
       const [goalRes, recRes] = await Promise.all([
         api.getGoals(),
         api.getGoalRecommendations().catch(() => null),
       ]);
-      setGoals(goalRes.goals || []);
+      setGoals(goalRes?.goals || []);
       setRecommendations(recRes?.recommendations || []);
     } catch (err) {
       console.error('Failed to load goals', err);

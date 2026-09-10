@@ -30,15 +30,24 @@ export function setStoredToken(token) {
 // ── In-Memory Cache & Request Deduplication ───────────────────────────────────
 const apiCache = new Map();
 const inFlightRequests = new Map();
-const DEFAULT_CACHE_TTL_MS = 30 * 1000; // 30 seconds
+const DEFAULT_CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL for ultra-smooth navigation
 
 export function clearCache() {
   apiCache.clear();
 }
 
+export function getCached(endpoint) {
+  const cacheKey = `GET:${endpoint}`;
+  const entry = apiCache.get(cacheKey);
+  if (entry && (Date.now() - entry.timestamp < (entry.ttl || DEFAULT_CACHE_TTL_MS))) {
+    return entry.data;
+  }
+  return null;
+}
+
 // Render free tier spins down after 15 minutes of zero traffic.
 // We track last active response time to ensure the waking banner NEVER triggers on active user clicks.
-const SLEEP_INACTIVITY_THRESHOLD_MS = 12 * 60 * 1000; // 12 minutes
+const SLEEP_INACTIVITY_THRESHOLD_MS = 14 * 60 * 1000; // 14 minutes
 let wakingTimer = null;
 let activeRequests = 0;
 let isServerAwake = false;
@@ -58,6 +67,7 @@ function markServerActive() {
 }
 
 function isServerLikelySleeping() {
+  if (isServerAwake) return false;
   try {
     const last = sessionStorage.getItem('walletiq_server_active');
     if (last) {
@@ -68,29 +78,34 @@ function isServerLikelySleeping() {
       }
     }
   } catch {}
-  return !isServerAwake;
+  return true;
 }
 
 function onRequestStart() {
   activeRequests++;
   // Only arm waking timer if server is cold / inactive AND no timer is already running
+  // Cold start on Render takes ~30-45s; active queries take 0.5-2s, so threshold is 12s.
   if (isServerLikelySleeping() && !wakingTimer) {
     wakingTimer = setTimeout(() => {
-      // Re-verify that requests are still in flight and server hasn't responded yet
       if (activeRequests > 0 && isServerLikelySleeping()) {
         try {
           window.dispatchEvent(new CustomEvent('walletiq:server-waking'));
         } catch {}
       }
-    }, 5000); // 5s threshold: cold start on Render typically takes 15-40s, whereas active queries finish in <3s
+    }, 12000);
   }
 }
 
 function onRequestEnd() {
   activeRequests = Math.max(0, activeRequests - 1);
-  if (activeRequests === 0 && wakingTimer) {
-    clearTimeout(wakingTimer);
-    wakingTimer = null;
+  if (activeRequests === 0) {
+    if (wakingTimer) {
+      clearTimeout(wakingTimer);
+      wakingTimer = null;
+    }
+    try {
+      window.dispatchEvent(new CustomEvent('walletiq:server-ready'));
+    } catch {}
   }
 }
 
@@ -302,6 +317,7 @@ export const api = {
 
   // ── 14. Cache Management ──────────────────────────────────────────────────
   clearCache,
+  getCached,
 };
 
 export default api;

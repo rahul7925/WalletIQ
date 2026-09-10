@@ -4,13 +4,14 @@ import StatCard from '../components/StatCard';
 import { api } from '../services/api';
 
 export default function SpendingInsightsPage() {
-  const [insights, setInsights] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedInsights = api.getCached ? api.getCached('/insights/spending') : null;
+  const [insights, setInsights] = useState(cachedInsights);
+  const [isLoading, setIsLoading] = useState(!cachedInsights);
 
   useEffect(() => {
     let isMounted = true;
     async function loadInsights() {
-      setIsLoading(true);
+      if (!insights && !cachedInsights) setIsLoading(true);
       try {
         const data = await api.getSpendingInsights();
         if (isMounted) setInsights(data);

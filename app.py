@@ -766,7 +766,7 @@ def update_last_seen():
 
 
 # ── Per-user stats (all queries scoped to user_id) ────────────────────────────
-def get_user_stats(user_id: int) -> dict:
+def get_user_stats(user_id: int, return_records: bool = False):
     now = ist_now()
 
     # All expenses for user — use .filter() not .all() to keep as query
@@ -819,7 +819,7 @@ def get_user_stats(user_id: int) -> dict:
     due_soon   = [b for b in bills if not b.is_paid
                   and now.day <= b.due_day <= now.day + 5]
 
-    return {
+    stats_dict = {
         'total':          round(total, 2),
         'month_total':    round(month_total, 2),
         'avg':            round(avg, 2),
@@ -836,6 +836,15 @@ def get_user_stats(user_id: int) -> dict:
         'due_soon_bills': len(due_soon),
         'top_category':   max(cat_totals, key=cat_totals.get) if cat_totals else '—',
     }
+
+    if return_records:
+        return stats_dict, {
+            'expenses': expenses,
+            'budgets': budgets,
+            'investments': investments,
+            'bills': bills,
+        }
+    return stats_dict
 
 
 from services.financial_health import compute_financial_health

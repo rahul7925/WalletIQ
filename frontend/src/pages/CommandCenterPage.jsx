@@ -16,15 +16,18 @@ import ProgressBar from '../components/ProgressBar';
 import { api } from '../services/api';
 
 export default function CommandCenterPage() {
-  const [data, setData] = useState(null);
-  const [health, setHealth] = useState(null);
-  const [insights, setInsights] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedDash = api.getCached ? api.getCached('/dashboard/summary') : null;
+  const cachedHealth = api.getCached ? api.getCached('/financial-health') : null;
+  const cachedInsights = api.getCached ? api.getCached('/insights/spending') : null;
+  const [data, setData] = useState(cachedDash);
+  const [health, setHealth] = useState(cachedHealth);
+  const [insights, setInsights] = useState(cachedInsights);
+  const [isLoading, setIsLoading] = useState(!cachedDash);
 
   useEffect(() => {
     let isMounted = true;
     async function loadAll() {
-      setIsLoading(true);
+      if (!data && !cachedDash) setIsLoading(true);
       try {
         const [dashRes, healthRes, insightsRes] = await Promise.all([
           api.getDashboardSummary().catch(() => null),

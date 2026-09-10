@@ -29,11 +29,18 @@ const CATEGORIES = [
 ];
 
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, per_page: 15, total: 0, total_pages: 1 });
+  const cachedData = api.getCached ? (api.getCached('/expenses?page=1&per_page=15') || api.getCached('/expenses')) : null;
+  const initialExpenses = cachedData?.expenses || cachedData?.items || [];
+  const [expenses, setExpenses] = useState(initialExpenses);
+  const [pagination, setPagination] = useState({
+    page: cachedData?.page || 1,
+    per_page: cachedData?.per_page || cachedData?.limit || 15,
+    total: cachedData?.total || initialExpenses.length,
+    total_pages: cachedData?.total_pages || cachedData?.pages || 1,
+  });
   const [categoryFilter, setCategoryFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(initialExpenses.length === 0);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -52,7 +59,7 @@ export default function ExpensesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchExpenses = useCallback(async (page = 1) => {
-    setIsLoading(true);
+    if (expenses.length === 0 && initialExpenses.length === 0) setIsLoading(true);
     try {
       const params = { page, per_page: 15 };
       if (categoryFilter) params.category = categoryFilter;
@@ -70,7 +77,7 @@ export default function ExpensesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [categoryFilter]);
+  }, [categoryFilter, expenses.length, initialExpenses.length]);
 
   useEffect(() => {
     fetchExpenses(1);

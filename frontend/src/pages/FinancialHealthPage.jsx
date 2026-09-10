@@ -6,14 +6,15 @@ import Modal from '../components/Modal';
 import { api } from '../services/api';
 
 export default function FinancialHealthPage() {
-  const [healthData, setHealthData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedHealth = api.getCached ? api.getCached('/financial-health') : null;
+  const [healthData, setHealthData] = useState(cachedHealth);
+  const [isLoading, setIsLoading] = useState(!cachedHealth);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
-  const [incomeInput, setIncomeInput] = useState('');
+  const [incomeInput, setIncomeInput] = useState(cachedHealth?.monthly_income || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function loadHealth() {
-    setIsLoading(true);
+    if (!healthData && !cachedHealth) setIsLoading(true);
     try {
       const data = await api.getFinancialHealth();
       setHealthData(data);

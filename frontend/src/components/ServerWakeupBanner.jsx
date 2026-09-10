@@ -3,14 +3,22 @@ import { Loader2, X } from 'lucide-react';
 
 export default function ServerWakeupBanner() {
   const [isWaking, setIsWaking] = useState(false);
-  const [elapsed, setElapsed] = useState(5);
+  const [elapsed, setElapsed] = useState(12);
 
   useEffect(() => {
     let timer = null;
 
     function handleWaking() {
+      // Suppress if the server has already answered in this active session
+      try {
+        const lastActive = sessionStorage.getItem('walletiq_server_active');
+        if (lastActive && (Date.now() - parseInt(lastActive, 10)) < 14 * 60 * 1000) {
+          return;
+        }
+      } catch {}
+
       setIsWaking(true);
-      setElapsed(5);
+      setElapsed(12);
       if (!timer) {
         timer = setInterval(() => {
           setElapsed((prev) => prev + 1);

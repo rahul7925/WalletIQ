@@ -1,4 +1,4 @@
-def compute_financial_health(user_id: int) -> dict:
+def compute_financial_health(user_id: int, preloaded_expenses=None, preloaded_investments=None, preloaded_budgets=None) -> dict:
     from app import db, User, Expense, Budget, Investment, Bill, ist_now
 
     now = ist_now()
@@ -11,7 +11,7 @@ def compute_financial_health(user_id: int) -> dict:
         income = 1.0  # Avoid division by zero
 
     # 1. Monthly Expenses
-    expenses_list = Expense.query.filter_by(user_id=user_id).all()
+    expenses_list = preloaded_expenses if preloaded_expenses is not None else Expense.query.filter_by(user_id=user_id).all()
     this_month_expenses = [e for e in expenses_list
                            if e.created_at.month == now.month
                            and e.created_at.year == now.year]
@@ -42,7 +42,7 @@ def compute_financial_health(user_id: int) -> dict:
 
     # 4. Investment Ratio (20% weight)
     savings_expenses = sum(e.amount for e in this_month_expenses if e.category == 'Savings')
-    investments_list = Investment.query.filter_by(user_id=user_id).all()
+    investments_list = preloaded_investments if preloaded_investments is not None else Investment.query.filter_by(user_id=user_id).all()
     this_month_investments = [i for i in investments_list
                               if i.created_at.month == now.month
                               and i.created_at.year == now.year]
@@ -61,7 +61,7 @@ def compute_financial_health(user_id: int) -> dict:
 
     # 5. Budget Adherence (15% weight)
     # Fetch budgets for this month
-    budgets = Budget.query.filter_by(
+    budgets = preloaded_budgets if preloaded_budgets is not None else Budget.query.filter_by(
         user_id=user_id,
         month=now.month,
         year=now.year

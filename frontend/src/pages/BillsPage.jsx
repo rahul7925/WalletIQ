@@ -5,9 +5,11 @@ import StatCard from '../components/StatCard';
 import { api } from '../services/api';
 
 export default function BillsPage() {
-  const [bills, setBills] = useState([]);
-  const [reminders, setReminders] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedBills = api.getCached ? api.getCached('/bills') : null;
+  const initialBills = cachedBills?.bills || [];
+  const [bills, setBills] = useState(initialBills);
+  const [reminders, setReminders] = useState(() => (api.getCached ? api.getCached('/bills/reminders') : null));
+  const [isLoading, setIsLoading] = useState(initialBills.length === 0);
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,13 +26,13 @@ export default function BillsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function loadBills() {
-    setIsLoading(true);
+    if (bills.length === 0 && initialBills.length === 0) setIsLoading(true);
     try {
       const [billsData, remData] = await Promise.all([
         api.getBills(),
         api.getBillReminders().catch(() => null),
       ]);
-      setBills(billsData.bills || []);
+      setBills(billsData?.bills || []);
       setReminders(remData);
     } catch (err) {
       console.error('Failed to load bills', err);

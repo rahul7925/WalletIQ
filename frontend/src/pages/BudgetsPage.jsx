@@ -19,18 +19,20 @@ const CATEGORIES = [
 ];
 
 export default function BudgetsPage() {
-  const [budgetList, setBudgetList] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedData = api.getCached ? api.getCached('/budgets') : null;
+  const initialBudgets = cachedData?.budgets || [];
+  const [budgetList, setBudgetList] = useState(initialBudgets);
+  const [isLoading, setIsLoading] = useState(initialBudgets.length === 0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ category: 'Food', limit_amount: '' });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function loadBudgets() {
-    setIsLoading(true);
+    if (budgetList.length === 0 && initialBudgets.length === 0) setIsLoading(true);
     try {
       const data = await api.getBudgets();
-      setBudgetList(data.budgets || []);
+      setBudgetList(data?.budgets || []);
     } catch (err) {
       console.error('Failed to load budgets', err);
     } finally {

@@ -4,8 +4,10 @@ import Modal from '../components/Modal';
 import { api } from '../services/api';
 
 export default function ReportStudioPage() {
-  const [reports, setReports] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedReports = api.getCached ? api.getCached('/reports') : null;
+  const initialReports = cachedReports?.reports || [];
+  const [reports, setReports] = useState(initialReports);
+  const [isLoading, setIsLoading] = useState(initialReports.length === 0);
 
   // Modals
   const [isGenModalOpen, setIsGenModalOpen] = useState(false);
@@ -17,10 +19,10 @@ export default function ReportStudioPage() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   async function loadReports() {
-    setIsLoading(true);
+    if (reports.length === 0 && initialReports.length === 0) setIsLoading(true);
     try {
       const data = await api.getReports();
-      setReports(data.reports || []);
+      setReports(data?.reports || []);
     } catch (err) {
       console.error('Failed to load reports', err);
     } finally {
