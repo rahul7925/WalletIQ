@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, User, Lock, Globe, DollarSign, ShieldCheck, CheckCircle, AlertCircle, Save } from 'lucide-react';
+import { Settings, User, CheckCircle, AlertCircle, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
@@ -13,16 +13,9 @@ export default function SettingsPage() {
     monthly_income: user?.monthly_income || 0,
     recovery_pin: '',
   });
-  const [passwordData, setPasswordData] = useState({
-    current_password: '',
-    new_password: '',
-    confirm_password: '',
-  });
 
   const [profileMsg, setProfileMsg] = useState({ text: '', isError: false });
-  const [passwordMsg, setPasswordMsg] = useState({ text: '', isError: false });
   const [isProfileSaving, setIsProfileSaving] = useState(false);
-  const [isPasswordSaving, setIsPasswordSaving] = useState(false);
 
   function handleProfileChange(e) {
     const { name, value } = e.target;
@@ -69,7 +62,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ maxWidth: '680px' }}>
         {/* Profile Settings */}
         <div className="glass-card">
           <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -179,35 +172,6 @@ export default function SettingsPage() {
               <span>{isProfileSaving ? 'Updating...' : 'Save Changes'}</span>
             </button>
           </form>
-        </div>
-
-        {/* Security & System Info */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="glass-card">
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ShieldCheck size={18} color="var(--accent-gold)" />
-              <span>Security & Infrastructure</span>
-            </h3>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.8125rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Backend Architecture</span>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Railway Python/Flask</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Database Engine</span>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Railway MySQL (PyMySQL)</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Frontend Host</span>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Vercel Edge SPA</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Authentication Protocol</span>
-                <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>Cryptographic URLSafe Bearer</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
