@@ -1,23 +1,36 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 export const CAT_COLORS = {
-  Food: '#FFD75A',
-  Bills: '#5B8CFF',
-  Travel: '#5CD46B',
-  Entertainment: '#B57CFF',
-  Shopping: '#FF6B6B',
-  Health: '#83C5C0',
-  Investment: '#2ECC71',
-  Education: '#FFAA54',
-  Transport: '#4FA2E6',
-  Utilities: '#6C5CE7',
-  Savings: '#00B894',
-  EMI: '#E17055',
-  General: '#C8A96E',
-  Others: '#7EE7F5',
+  Food: '#F59E0B',          // Vibrant Warm Amber Gold
+  Shopping: '#EC4899',      // Electric Fuchsia Rose
+  Bills: '#3B82F6',         // Bright Sapphire Blue
+  Utilities: '#6366F1',     // Modern Indigo Violet
+  Travel: '#06B6D4',        // Electric Cyan Aqua
+  Transport: '#0EA5E9',     // Sky Blue
+  Entertainment: '#8B5CF6',  // Vivid Royal Purple
+  Health: '#10B981',        // Emerald Green
+  Investment: '#14B8A6',    // Mint Teal
+  Education: '#F97316',     // Vivid Sunset Orange
+  Savings: '#22C55E',       // Bright Green
+  EMI: '#EF4444',           // Crimson Flame
+  General: '#EAB308',       // Metallic Gold
+  Others: '#A855F7',        // Bright Orchid Violet
 };
 
-const DEFAULT_PALETTE = ['#FFD75A', '#5CD46B', '#4FA2E6', '#B57CFF', '#FF6B6B', '#83C5C0', '#FFAA54', '#7EE7F5'];
+const DEFAULT_PALETTE = [
+  '#F59E0B',
+  '#3B82F6',
+  '#EC4899',
+  '#10B981',
+  '#8B5CF6',
+  '#06B6D4',
+  '#F97316',
+  '#14B8A6',
+  '#6366F1',
+  '#EF4444',
+  '#22C55E',
+  '#A855F7',
+];
 
 function getColor(label, idx = 0) {
   return CAT_COLORS[label] || DEFAULT_PALETTE[idx % DEFAULT_PALETTE.length];
@@ -99,10 +112,12 @@ export function CategoryBarChart({ categorySpending = {}, height = 240 }) {
             label: 'Spending',
             data: dataVals,
             backgroundColor: colors,
-            hoverBackgroundColor: colors.map((c) => c + 'DD'),
-            borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
+            hoverBackgroundColor: colors.map((c) => c + 'EE'),
+            borderColor: colors,
+            borderWidth: 1.5,
+            borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 0, bottomRight: 0 },
             borderSkipped: false,
-            maxBarThickness: 36,
+            maxBarThickness: 38,
           },
         ],
       },
@@ -185,27 +200,28 @@ export function CategoryDoughnutChart({ categorySpending = {}, height = 240 }) {
           {
             data: dataVals,
             backgroundColor: colors,
+            hoverBackgroundColor: colors.map((c) => c + 'EE'),
             borderColor: '#12121A',
-            borderWidth: 2,
-            hoverOffset: 6,
+            borderWidth: 3,
+            hoverOffset: 8,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '68%',
+        cutout: '64%',
         animation: { duration: 600, easing: 'easeOutQuart' },
         plugins: {
           legend: {
             position: 'bottom',
             labels: {
-              boxWidth: 10,
-              boxHeight: 10,
-              borderRadius: 3,
+              boxWidth: 12,
+              boxHeight: 12,
+              borderRadius: 4,
               useBorderRadius: true,
-              padding: 12,
-              color: '#94A3B8',
+              padding: 14,
+              color: '#CBD5E1',
               font: { size: 11, weight: '500' },
             },
           },

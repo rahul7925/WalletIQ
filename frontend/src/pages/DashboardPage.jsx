@@ -132,47 +132,62 @@ export default function DashboardPage({ onOpenAddExpense }) {
         />
       </div>
 
+      {/* Recent Transactions */}
+      <div className="glass-card" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <div>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Recent Transactions</h3>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Latest expenses recorded</span>
+          </div>
+          <Link to="/expenses" className="btn btn-secondary btn-sm">
+            <span>Manage All</span>
+            <ArrowUpRight size={14} />
+          </Link>
+        </div>
+
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Description / Notes</th>
+                <th style={{ textAlign: 'right' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.recent_expenses || data?.transactions) && (data?.recent_expenses || data?.transactions).length > 0 ? (
+                (data?.recent_expenses || data?.transactions).slice(0, 6).map((exp) => (
+                  <tr key={exp.id}>
+                    <td className="num-mono" style={{ color: 'var(--text-secondary)' }}>
+                      {exp.date}
+                    </td>
+                    <td>
+                      <span className="badge badge-gold">{exp.category}</span>
+                    </td>
+                    <td style={{ color: 'var(--text-primary)' }}>
+                      {exp.description || exp.title || '—'}
+                    </td>
+                    <td className="num-mono" style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      ₹{Number(exp.amount).toLocaleString()}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                    No expenses recorded yet. Click "Record Expense" to begin.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* 2×2 Interactive Visual Analytics Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* 1. Category Bar Chart */}
-        <div className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Spending by Category</h3>
-              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Monthly distribution per category</span>
-            </div>
-            <Link to="/expenses" style={{ fontSize: '0.8125rem', color: 'var(--accent-gold)' }}>
-              View all
-            </Link>
-          </div>
-          <CategoryBarChart categorySpending={categorySpending} height={240} />
-        </div>
-
-        {/* 2. Category Doughnut / Pie Chart */}
-        <div className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Category Breakdown</h3>
-              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Proportional expense share</span>
-            </div>
-            <span className="badge badge-gold">Breakdown</span>
-          </div>
-          <CategoryDoughnutChart categorySpending={categorySpending} height={240} />
-        </div>
-
-        {/* 3. Monthly Trend Line Chart */}
-        <div className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Monthly Trend</h3>
-              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>6-month expense progression</span>
-            </div>
-            <span className="badge badge-blue">Trajectory</span>
-          </div>
-          <MonthlyTrendLineChart monthlyKeys={monthlyKeys} monthlyVals={monthlyVals} height={240} />
-        </div>
-
-        {/* 4. Budget vs Actual & Allowance */}
+        {/* 1. Budget vs Actual & Allowance */}
         <div className="glass-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
             <div>
@@ -229,58 +244,43 @@ export default function DashboardPage({ onOpenAddExpense }) {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Recent Transactions */}
-      <div className="glass-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Recent Transactions</h3>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Latest expenses recorded</span>
+        {/* 2. Monthly Trend Line Chart */}
+        <div className="glass-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Monthly Trend</h3>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>6-month expense progression</span>
+            </div>
+            <span className="badge badge-blue">Trajectory</span>
           </div>
-          <Link to="/expenses" className="btn btn-secondary btn-sm">
-            <span>Manage All</span>
-            <ArrowUpRight size={14} />
-          </Link>
+          <MonthlyTrendLineChart monthlyKeys={monthlyKeys} monthlyVals={monthlyVals} height={240} />
         </div>
 
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Category</th>
-                <th>Description / Notes</th>
-                <th style={{ textAlign: 'right' }}>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(data?.recent_expenses || data?.transactions) && (data?.recent_expenses || data?.transactions).length > 0 ? (
-                (data?.recent_expenses || data?.transactions).slice(0, 6).map((exp) => (
-                  <tr key={exp.id}>
-                    <td className="num-mono" style={{ color: 'var(--text-secondary)' }}>
-                      {exp.date}
-                    </td>
-                    <td>
-                      <span className="badge badge-gold">{exp.category}</span>
-                    </td>
-                    <td style={{ color: 'var(--text-primary)' }}>
-                      {exp.description || exp.title || '—'}
-                    </td>
-                    <td className="num-mono" style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      ₹{Number(exp.amount).toLocaleString()}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                    No expenses recorded yet. Click "Record Expense" to begin.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {/* 3. Category Bar Chart: Spending by Category */}
+        <div className="glass-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Spending by Category</h3>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Monthly distribution per category</span>
+            </div>
+            <Link to="/expenses" style={{ fontSize: '0.8125rem', color: 'var(--accent-gold)' }}>
+              View all
+            </Link>
+          </div>
+          <CategoryBarChart categorySpending={categorySpending} height={240} />
+        </div>
+
+        {/* 4. Category Doughnut / Pie Chart: Category Breakdown */}
+        <div className="glass-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Category Breakdown</h3>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Proportional expense share</span>
+            </div>
+            <span className="badge badge-gold">Breakdown</span>
+          </div>
+          <CategoryDoughnutChart categorySpending={categorySpending} height={240} />
         </div>
       </div>
     </div>
