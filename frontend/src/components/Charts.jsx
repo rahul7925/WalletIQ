@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 export const CAT_COLORS = {
-  Food: '#14B8A6',          // Bright Teal (replaced yellow)
+  Food: '#D946EF',          // Electric Magenta
   Bills: '#2563EB',         // Royal Blue
   Travel: '#06B6D4',        // Bright Cyan
   Entertainment: '#9333EA',  // Vivid Purple
   Shopping: '#EC4899',      // Hot Pink
   Health: '#EF4444',        // Bright Red
   Investment: '#16A34A',    // Vibrant Green
-  Transport: '#38BDF8',     // Sky Blue (replaced orange)
+  Transport: '#38BDF8',     // Sky Blue
   Utilities: '#6366F1',     // Bright Indigo
   Savings: '#22C55E',       // Fresh Lime Green
   Education: '#0EA5E9',     // Deep Sky Blue
@@ -18,16 +18,16 @@ export const CAT_COLORS = {
 };
 
 const DEFAULT_PALETTE = [
+  '#D946EF', // Electric Magenta
   '#2563EB', // Blue
   '#16A34A', // Green
-  '#14B8A6', // Teal
   '#EF4444', // Red
   '#9333EA', // Purple
   '#38BDF8', // Sky Blue
   '#06B6D4', // Cyan
   '#EC4899', // Pink
+  '#14B8A6', // Teal
   '#6366F1', // Indigo
-  '#8B5CF6', // Violet
 ];
 
 function getColor(label, idx = 0) {
