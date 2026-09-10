@@ -382,16 +382,19 @@ def api_create_expense():
     user = _get_user()
     data = request.get_json(silent=True) or request.form
 
-    title = (data.get('title') or '').strip()
+    title = (data.get('title') or data.get('description') or data.get('desc') or '').strip()
+    category = (data.get('category') or '').strip()
+    if not title:
+        title = f"{category or 'General'} Expense"
+
     try:
         amount = float(data.get('amount', 0))
     except (TypeError, ValueError):
         return error_response("VALIDATION_ERROR", "Invalid amount.", 400)
 
-    if not title or amount <= 0:
-        return error_response("VALIDATION_ERROR", "Expense title and a positive amount are required.", 400)
+    if amount <= 0:
+        return error_response("VALIDATION_ERROR", "A positive amount is required.", 400)
 
-    category = (data.get('category') or '').strip()
     if not category or category.lower() in ('auto', 'auto-detect', ''):
         category = predict_category(title)
 
@@ -438,9 +441,10 @@ def api_update_expense(eid):
     if not expense:
         return error_response("NOT_FOUND", "Expense not found.", 404)
 
-    data = request.get_json(silent=True) or request.form
-    if 'title' in data and data['title']:
-        expense.title = str(data['title']).strip()
+    data = request.get_json(silent=True) or request.form or {}
+    new_title = data.get('title') or data.get('description') or data.get('desc')
+    if new_title:
+        expense.title = str(new_title).strip()
     if 'amount' in data:
         try:
             amt = float(data['amount'])

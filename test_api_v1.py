@@ -141,7 +141,7 @@ class TestApiV1(unittest.TestCase):
         token, user = self._register_user("expense_tester", "ExpensePass123!", "exp@example.com")
         headers = {'Authorization': f'Bearer {token}'}
 
-        # Create
+        # Create with title
         res = self.client.post('/api/v1/expenses', json={
             'title': 'Swiggy Dinner',
             'amount': 450.0,
@@ -172,6 +172,27 @@ class TestApiV1(unittest.TestCase):
         # Verify empty
         res_verify = self.client.get('/api/v1/expenses', headers=headers)
         self.assertEqual(len(res_verify.get_json()['data']['items']), 0)
+
+    def test_expense_with_description_fallback(self):
+        token, user = self._register_user("desc_tester", "DescPass123!", "desc@example.com")
+        headers = {'Authorization': f'Bearer {token}'}
+
+        # Create with description field (sent from React UI)
+        res = self.client.post('/api/v1/expenses', json={
+            'description': 'Birthday Treat',
+            'amount': 800.0,
+            'category': 'Food'
+        }, headers=headers)
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.get_json()['data']['title'], 'Birthday Treat')
+
+        # Update using description
+        eid = res.get_json()['data']['id']
+        res_put = self.client.put(f'/api/v1/expenses/{eid}', json={
+            'description': 'Birthday Treat Updated'
+        }, headers=headers)
+        self.assertEqual(res_put.status_code, 200)
+        self.assertEqual(res_put.get_json()['data']['title'], 'Birthday Treat Updated')
 
     # ── 4. Budgets CRUD ───────────────────────────────────────────────────────
     def test_budgets_crud(self):

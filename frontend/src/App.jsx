@@ -67,9 +67,10 @@ export default function App() {
     setIsSavingQuick(true);
     try {
       await api.createExpense({
+        title: quickDesc.trim() || `${quickCategory} Expense`,
+        description: quickDesc.trim(),
         amount: parseFloat(quickAmount),
         category: quickCategory,
-        description: quickDesc,
         date: quickDate,
       });
       setIsQuickExpenseOpen(false);

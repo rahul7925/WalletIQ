@@ -110,17 +110,19 @@ export default function ExpensesPage() {
     try {
       if (selectedExpense) {
         await api.updateExpense(selectedExpense.id, {
+          title: (formData.description || '').trim() || `${formData.category} Expense`,
+          description: (formData.description || '').trim(),
           amount: parseFloat(formData.amount),
           category: formData.category,
-          description: formData.description,
           date: formData.date,
         });
         setIsEditModalOpen(false);
       } else {
         await api.createExpense({
+          title: (formData.description || '').trim() || `${formData.category} Expense`,
+          description: (formData.description || '').trim(),
           amount: parseFloat(formData.amount),
           category: formData.category,
-          description: formData.description,
           date: formData.date,
         });
         setIsAddModalOpen(false);
