@@ -106,16 +106,24 @@ def set_security_headers(response):
     return response
 
 # ── CORS Configuration (Vercel Frontend + Local Vite Dev) ─────────────────────
+import re
 from flask_cors import CORS
 cors_env = os.environ.get('CORS_ORIGINS')
 if cors_env:
-    allowed_origins = [o.strip() for o in cors_env.split(',') if o.strip()]
+    raw_origins = [o.strip() for o in cors_env.split(',') if o.strip()]
+    allowed_origins = []
+    for o in raw_origins:
+        if '*' in o:
+            pattern = '^' + re.escape(o).replace(r'\*', '.*') + '$'
+            allowed_origins.append(re.compile(pattern))
+        else:
+            allowed_origins.append(o)
 else:
     allowed_origins = [
         'http://localhost:5173',
         'http://127.0.0.1:5173',
         'http://localhost:3000',
-        'https://walletiq.vercel.app',
+        re.compile(r'^https://.*\.vercel\.app$'),
     ]
 
 CORS(

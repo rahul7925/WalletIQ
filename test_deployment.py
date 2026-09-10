@@ -104,6 +104,14 @@ class TestDeploymentReadiness(unittest.TestCase):
             self.assertIn('charset=utf8mb4', call_url)
             self.assertTrue(mock_create_engine.call_args[1]['connect_args']['ssl']['ssl'])
 
+    def test_cors_wildcard_regex_generation(self):
+        """Test that CORS wildcard patterns correctly match vercel production domains."""
+        import re
+        pattern_str = 'https://*.vercel.app'
+        compiled = re.compile('^' + re.escape(pattern_str).replace(r'\*', '.*') + '$')
+        self.assertTrue(bool(compiled.match('https://walletiq-vert.vercel.app')))
+        self.assertFalse(bool(compiled.match('https://malicious-site.com')))
+
 
 if __name__ == '__main__':
     unittest.main()
