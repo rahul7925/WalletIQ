@@ -54,6 +54,7 @@ def generate_spending_insights_data(user_id: int) -> dict:
             if len(set(amounts)) == 1:  # Identical recurring amounts
                 suspected_subscriptions.append({
                     'title': list_exp[0].title,
+                    'name': list_exp[0].title,
                     'amount': list_exp[0].amount,
                     'frequency': 'Monthly',
                     'total_waste': sum(amounts)
@@ -79,6 +80,33 @@ def generate_spending_insights_data(user_id: int) -> dict:
             weekday_total += e.amount
             weekday_count += 1
 
+    # 6. Anomalies & Recommendations
+    anomalies = []
+    recommendations = []
+
+    if max_growth >= 30.0 and fastest_growing != "None":
+        anomalies.append(f"High spending surge in {fastest_growing}: up +{round(max_growth, 1)}% vs last month.")
+        recommendations.append(f"Consider capping non-essential purchases in {fastest_growing} to stabilize cash flow.")
+
+    if suspected_subscriptions:
+        total_sub_cost = sum(s['amount'] for s in suspected_subscriptions)
+        anomalies.append(f"{len(suspected_subscriptions)} recurring subscription(s) detected costing ~₹{round(total_sub_cost, 2)}/mo.")
+        recommendations.append(f"Audit {len(suspected_subscriptions)} suspected subscriptions for potential unused memberships.")
+
+    if total_last > 0 and total_this > total_last * 1.25:
+        spike_pct = round(((total_this - total_last) / total_last) * 100.0, 1)
+        anomalies.append(f"Overall monthly outflow is pacing {spike_pct}% above last month's run rate.")
+
+    if weekend_count > 0 and weekday_count > 0:
+        avg_weekend = weekend_total / weekend_count
+        avg_weekday = weekday_total / weekday_count
+        if avg_weekend > avg_weekday * 1.5:
+            ratio = round(avg_weekend / max(1.0, avg_weekday), 1)
+            recommendations.append(f"Weekend expenditures are {ratio}x higher per day than weekdays. Consider a weekend dining envelope.")
+
+    if not recommendations:
+        recommendations.append("Spending patterns are within healthy baseline tolerances. Keep maintaining regular savings contributions.")
+
     return {
         'total_this_month': round(total_this, 2),
         'total_last_month': round(total_last, 2),
@@ -87,7 +115,10 @@ def generate_spending_insights_data(user_id: int) -> dict:
         'fastest_growing_category': fastest_growing,
         'fastest_growing_percentage': round(max_growth, 2) if max_growth > 0 else 0.0,
         'suspected_subscriptions': suspected_subscriptions[:5],
+        'subscriptions': suspected_subscriptions[:5],
         'heatmap': dict(dow_spending),
         'average_weekend': round(weekend_total / max(1, weekend_count), 2),
-        'average_weekday': round(weekday_total / max(1, weekday_count), 2)
+        'average_weekday': round(weekday_total / max(1, weekday_count), 2),
+        'anomalies': anomalies,
+        'recommendations': recommendations
     }

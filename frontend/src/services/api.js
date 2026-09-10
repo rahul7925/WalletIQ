@@ -26,30 +26,61 @@ export function setStoredToken(token) {
   }
 }
 
+// Render free tier spins down after 15 minutes of zero traffic.
+// We track last active response time to ensure the waking banner NEVER triggers on active user clicks.
+const SLEEP_INACTIVITY_THRESHOLD_MS = 12 * 60 * 1000; // 12 minutes
 let wakingTimer = null;
 let activeRequests = 0;
+let isServerAwake = false;
+
+function markServerActive() {
+  isServerAwake = true;
+  try {
+    sessionStorage.setItem('walletiq_server_active', String(Date.now()));
+  } catch {}
+  if (wakingTimer) {
+    clearTimeout(wakingTimer);
+    wakingTimer = null;
+  }
+  try {
+    window.dispatchEvent(new CustomEvent('walletiq:server-ready'));
+  } catch {}
+}
+
+function isServerLikelySleeping() {
+  try {
+    const last = sessionStorage.getItem('walletiq_server_active');
+    if (last) {
+      const elapsed = Date.now() - parseInt(last, 10);
+      if (elapsed < SLEEP_INACTIVITY_THRESHOLD_MS) {
+        isServerAwake = true;
+        return false;
+      }
+    }
+  } catch {}
+  return !isServerAwake;
+}
 
 function onRequestStart() {
   activeRequests++;
-  if (activeRequests === 1) {
+  // Only arm waking timer if server is cold / inactive AND no timer is already running
+  if (isServerLikelySleeping() && !wakingTimer) {
     wakingTimer = setTimeout(() => {
-      try {
-        window.dispatchEvent(new CustomEvent('walletiq:server-waking'));
-      } catch {}
-    }, 3000);
+      // Re-verify that requests are still in flight and server hasn't responded yet
+      if (activeRequests > 0 && isServerLikelySleeping()) {
+        try {
+          window.dispatchEvent(new CustomEvent('walletiq:server-waking'));
+        } catch {}
+      }
+    }, 5000); // 5s threshold: cold start on Render typically takes 15-40s, whereas active queries finish in <3s
   }
 }
 
 function onRequestEnd() {
   activeRequests = Math.max(0, activeRequests - 1);
-  if (activeRequests === 0) {
-    if (wakingTimer) {
-      clearTimeout(wakingTimer);
-      wakingTimer = null;
-    }
-    try {
-      window.dispatchEvent(new CustomEvent('walletiq:server-ready'));
-    } catch {}
+  if (activeRequests === 0 && wakingTimer) {
+    clearTimeout(wakingTimer);
+    wakingTimer = null;
   }
 }
 
@@ -78,6 +109,9 @@ async function request(endpoint, options = {}) {
       headers,
       credentials: 'include',
     });
+
+    // Mark server active on ANY response received from server
+    markServerActive();
 
     // Handle file downloads
     const contentType = response.headers.get('content-type') || '';

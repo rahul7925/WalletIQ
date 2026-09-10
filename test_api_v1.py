@@ -314,6 +314,44 @@ class TestApiV1(unittest.TestCase):
         self.assertIn('reply', json_data['data'])
         self.assertIn('response', json_data['data'])
 
+    # ── 9. Spending Insights Endpoint ──────────────────────────────────────────
+    def test_spending_insights_endpoint(self):
+        """Test GET /api/v1/insights/spending returns enriched insight structure."""
+        token, user = self._register_user("insights_user", "InsightsPass123!", "insights@example.com")
+        headers = {'Authorization': f'Bearer {token}'}
+
+        res = self.client.get('/api/v1/insights/spending', headers=headers)
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertTrue(data['success'])
+        self.assertIn('ranked_categories', data['data'])
+        self.assertIn('anomalies', data['data'])
+        self.assertIn('recommendations', data['data'])
+        self.assertIn('subscriptions', data['data'])
+
+    # ── 10. Goal Savings Route Alias ───────────────────────────────────────────
+    def test_goal_savings_route_alias(self):
+        """Test PUT /api/v1/goals/<id>/savings updates current_savings."""
+        token, user = self._register_user("goal_user", "GoalPass123!", "goal@example.com")
+        headers = {'Authorization': f'Bearer {token}'}
+
+        # Create goal
+        create_res = self.client.post('/api/v1/goals', json={
+            'name': 'Emergency Fund',
+            'target_amount': 50000.0,
+            'category': 'Emergency',
+            'deadline': '2026-12-31'
+        }, headers=headers)
+        self.assertEqual(create_res.status_code, 201)
+        gid = create_res.get_json()['data']['id']
+
+        # Update savings via /goals/<gid>/savings
+        up_res = self.client.put(f'/api/v1/goals/{gid}/savings', json={
+            'current_savings': 15000.0
+        }, headers=headers)
+        self.assertEqual(up_res.status_code, 200)
+        self.assertEqual(up_res.get_json()['data']['current_savings'], 15000.0)
+
 
 if __name__ == '__main__':
     unittest.main()

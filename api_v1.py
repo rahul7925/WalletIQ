@@ -1172,6 +1172,7 @@ def api_create_goal():
 
 
 @api_v1.route('/goals/<int:gid>', methods=['PUT'])
+@api_v1.route('/goals/<int:gid>/savings', methods=['PUT'])
 @api_login_required
 def api_update_goal(gid):
     from services.goal_service import update_user_goal_savings
@@ -1263,7 +1264,21 @@ def api_notification_read_all():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 11. REPORTS STUDIO
+# 11. SPENDING INSIGHTS & BEHAVIORAL PATTERNS
+# ══════════════════════════════════════════════════════════════════════════════
+
+@api_v1.route('/insights/spending', methods=['GET'])
+@api_v1.route('/spending-insights', methods=['GET'])
+@api_login_required
+def api_spending_insights():
+    from services.insight_service import generate_spending_insights_data
+    user = _get_user()
+    data = generate_spending_insights_data(user.id)
+    return success_response(data, "Spending insights retrieved", 200)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 12. REPORTS STUDIO
 # ══════════════════════════════════════════════════════════════════════════════
 
 @api_v1.route('/reports', methods=['GET'])
@@ -1327,6 +1342,7 @@ def api_generate_report():
 
 
 @api_v1.route('/reports/<int:rid>/download', methods=['GET'])
+@api_v1.route('/reports/download/<int:rid>', methods=['GET'])
 @api_login_required
 def api_download_report(rid):
     from app import db, ReportHistory, ist_now
@@ -1374,14 +1390,16 @@ def api_delete_report(rid):
 
 
 @api_v1.route('/reports/share', methods=['POST'])
+@api_v1.route('/reports/share/<int:rid>', methods=['POST'])
 @api_login_required
-def api_share_report():
+def api_share_report(rid=None):
     import secrets
     from app import db, ReportHistory
 
     user = _get_user()
-    data = request.get_json(silent=True) or request.form
-    rid = int(data.get('report_id', 0))
+    if rid is None:
+        data = request.get_json(silent=True) or request.form
+        rid = int(data.get('report_id', 0))
 
     report = _owned(ReportHistory, rid, user.id)
     if not report:
@@ -1401,6 +1419,42 @@ def api_share_report():
     }, "Share link generated", 200)
 
 
+@api_v1.route('/reports/shared/<string:key>', methods=['GET'])
+@api_v1.route('/shared/report/<string:key>', methods=['GET'])
+def api_get_shared_report(key):
+    from app import ReportHistory, ist_now
+    from services.report_service import get_report_data
+    import re
+
+    report = ReportHistory.query.filter_by(share_key=key).first()
+    if not report:
+        return error_response("NOT_FOUND", "Shared report not found or link has expired.", 404)
+
+    month_map = {m.lower(): i + 1 for i, m in enumerate(
+        ['january', 'february', 'march', 'april', 'may', 'june',
+         'july', 'august', 'september', 'october', 'november', 'december'])}
+    parts = (report.report_name or '').lower().split()
+    m = next((month_map[p] for p in parts if p in month_map), ist_now().month)
+    y = next((int(p) for p in parts if re.match(r'^\d{4}$', p)), ist_now().year)
+
+    data = get_report_data(report.user_id, y, m)
+    return success_response({
+        'report': {
+            'id': report.id,
+            'title': report.report_name,
+            'format': report.report_type,
+            'month': m,
+            'year': y,
+            'created_at': report.created_at.isoformat() if report.created_at else None,
+            'total_income': data.get('total_income', 0),
+            'total_expenses': data.get('total_expenses', 0),
+            'net_savings': data.get('net_savings', 0),
+            'summary': data.get('summary', {}),
+        },
+        'data': data
+    }, "Shared report loaded", 200)
+
+
 @api_v1.route('/reports/compare', methods=['POST'])
 @api_login_required
 def api_compare_reports():
@@ -1409,9 +1463,12 @@ def api_compare_reports():
     data = request.get_json(silent=True) or request.form
 
     try:
-        report_a = int(data.get('report_a', 0))
-        report_b = int(data.get('report_b', 0))
+        report_a = int(data.get('report_a') or data.get('report_id_1') or data.get('report_a_id') or 0)
+        report_b = int(data.get('report_b') or data.get('report_id_2') or data.get('report_b_id') or 0)
     except (TypeError, ValueError):
+        return error_response("VALIDATION_ERROR", "Two valid report IDs required.", 400)
+
+    if not report_a or not report_b:
         return error_response("VALIDATION_ERROR", "Two valid report IDs required.", 400)
 
     comp = generate_ai_comparison(user.id, report_a, report_b)
@@ -1419,7 +1476,7 @@ def api_compare_reports():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 12. RECEIPT OCR VIA GEMINI MULTIMODAL VISION
+# 13. RECEIPT OCR VIA GEMINI MULTIMODAL VISION
 # ══════════════════════════════════════════════════════════════════════════════
 
 @api_v1.route('/ocr/receipt', methods=['POST'])
