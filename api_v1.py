@@ -288,6 +288,7 @@ def api_dashboard_summary():
     recent_data = [{
         'id': e.id,
         'title': e.title,
+        'description': e.title,
         'amount': e.amount,
         'category': e.category,
         'date': e.created_at.strftime('%Y-%m-%d') if e.created_at else None,
@@ -300,17 +301,29 @@ def api_dashboard_summary():
     # Unread notifications count
     unread_notifs = Notification.query.filter_by(user_id=user.id, is_read=False).count()
 
+    month_spent = float(stats.get('month_total', 0.0))
+    monthly_budget = float(user.monthly_budget or 0.0)
+    monthly_income = float(user.monthly_income or 0.0)
+    budget_progress = round((month_spent / monthly_budget * 100), 1) if monthly_budget > 0 else 0
+
     return success_response({
         'stats': stats,
+        'total_spent': month_spent,
+        'monthly_budget': monthly_budget,
+        'monthly_income': monthly_income,
+        'budget_progress': budget_progress,
+        'overdue_bills_count': stats.get('overdue_bills', 0),
+        'category_spending': stats.get('cat_totals', {}),
         'recent_expenses': recent_data,
+        'transactions': recent_data,
         'health': health,
         'unread_notifications': unread_notifs,
         'user': {
             'username': user.username,
             'full_name': user.full_name,
             'language': user.language,
-            'monthly_budget': user.monthly_budget,
-            'monthly_income': user.monthly_income,
+            'monthly_budget': monthly_budget,
+            'monthly_income': monthly_income,
         }
     }, "Dashboard summary fetched", 200)
 
@@ -321,6 +334,10 @@ def api_dashboard_stats():
     from app import get_user_stats
     user = _get_user()
     stats = get_user_stats(user.id)
+    stats['total_spent'] = stats.get('month_total', 0)
+    stats['monthly_budget'] = float(user.monthly_budget or 0.0)
+    stats['monthly_income'] = float(user.monthly_income or 0.0)
+    stats['category_spending'] = stats.get('cat_totals', {})
     return success_response(stats, "User stats fetched", 200)
 
 
@@ -359,6 +376,7 @@ def api_get_expenses():
     items = [{
         'id': e.id,
         'title': e.title,
+        'description': e.title,
         'amount': e.amount,
         'category': e.category,
         'created_at': e.created_at.isoformat() if e.created_at else None,

@@ -55,11 +55,13 @@ export default function DashboardPage({ onOpenAddExpense }) {
     );
   }
 
-  const budgetProgress = data?.budget_progress || 0;
-  const totalSpent = data?.total_spent || 0;
-  const monthlyBudget = data?.monthly_budget || 0;
-  const monthlyIncome = data?.monthly_income || 0;
+  const totalSpent = data?.total_spent ?? data?.stats?.month_total ?? stats?.month_total ?? 0;
+  const monthlyBudget = data?.monthly_budget ?? data?.user?.monthly_budget ?? stats?.monthly_budget ?? 0;
+  const monthlyIncome = data?.monthly_income ?? data?.user?.monthly_income ?? stats?.monthly_income ?? 0;
+  const budgetProgress = data?.budget_progress ?? (monthlyBudget > 0 ? Math.min(100, Math.round((totalSpent / monthlyBudget) * 100)) : 0);
   const savingsRate = monthlyIncome > 0 ? Math.max(0, Math.round(((monthlyIncome - totalSpent) / monthlyIncome) * 100)) : 0;
+  const overdueBills = data?.overdue_bills_count ?? data?.stats?.overdue_bills ?? stats?.overdue_bills ?? 0;
+  const categorySpending = data?.category_spending || data?.stats?.cat_totals || stats?.cat_totals || {};
 
   return (
     <div className="page-wrapper animate-fade">
@@ -112,10 +114,10 @@ export default function DashboardPage({ onOpenAddExpense }) {
         />
         <StatCard
           title="Unpaid / Overdue Bills"
-          value={data?.overdue_bills_count || 0}
+          value={overdueBills}
           subtitle="Requires attention"
           icon={AlertTriangle}
-          color={data?.overdue_bills_count > 0 ? 'red' : 'purple'}
+          color={overdueBills > 0 ? 'red' : 'purple'}
         />
       </div>
 
@@ -155,8 +157,8 @@ export default function DashboardPage({ onOpenAddExpense }) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            {data?.category_spending && Object.keys(data.category_spending).length > 0 ? (
-              Object.entries(data.category_spending)
+            {categorySpending && Object.keys(categorySpending).length > 0 ? (
+              Object.entries(categorySpending)
                 .slice(0, 5)
                 .map(([cat, amt], idx) => (
                   <div key={idx}>
@@ -200,8 +202,8 @@ export default function DashboardPage({ onOpenAddExpense }) {
               </tr>
             </thead>
             <tbody>
-              {data?.recent_expenses && data.recent_expenses.length > 0 ? (
-                data.recent_expenses.slice(0, 6).map((exp) => (
+              {(data?.recent_expenses || data?.transactions) && (data?.recent_expenses || data?.transactions).length > 0 ? (
+                (data?.recent_expenses || data?.transactions).slice(0, 6).map((exp) => (
                   <tr key={exp.id}>
                     <td className="num-mono" style={{ color: 'var(--text-secondary)' }}>
                       {exp.date}
@@ -210,7 +212,7 @@ export default function DashboardPage({ onOpenAddExpense }) {
                       <span className="badge badge-gold">{exp.category}</span>
                     </td>
                     <td style={{ color: 'var(--text-primary)' }}>
-                      {exp.description || '—'}
+                      {exp.description || exp.title || '—'}
                     </td>
                     <td className="num-mono" style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-primary)' }}>
                       ₹{Number(exp.amount).toLocaleString()}
