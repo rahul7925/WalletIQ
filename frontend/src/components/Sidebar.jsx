@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -16,10 +16,12 @@ import {
   FileSpreadsheet,
   Settings,
   LogOut,
+  AlertTriangle,
   X,
   Zap,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Modal from './Modal';
 
 const NAV_GROUPS = [
   {
@@ -61,10 +63,22 @@ const NAV_GROUPS = [
 export default function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  async function handleLogout() {
-    await logout();
-    navigate('/login');
+  async function handleConfirmLogout() {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      setShowLogoutModal(false);
+      navigate('/login');
+    } catch (err) {
+      console.warn('Logout error:', err);
+      setShowLogoutModal(false);
+      navigate('/login');
+    } finally {
+      setIsLoggingOut(false);
+    }
   }
 
   return (
@@ -248,7 +262,7 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
 
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutModal(true)}
             title="Log Out"
             style={{
               background: 'transparent',
@@ -266,6 +280,75 @@ export default function Sidebar({ isOpen, onClose }) {
           </button>
         </div>
       </aside>
+
+      {/* Logout Confirmation Alert Modal */}
+      <Modal
+        isOpen={showLogoutModal}
+        onClose={() => !isLoggingOut && setShowLogoutModal(false)}
+        title="Confirm Sign Out"
+        maxWidth="440px"
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', width: '100%' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowLogoutModal(false)}
+              disabled={isLoggingOut}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={handleConfirmLogout}
+              disabled={isLoggingOut}
+              style={{
+                background: 'var(--accent-red, #EF4444)',
+                color: '#FFFFFF',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.625rem 1.25rem',
+                fontWeight: 600,
+                borderRadius: 'var(--radius-md)',
+                cursor: isLoggingOut ? 'not-allowed' : 'pointer',
+                opacity: isLoggingOut ? 0.7 : 1,
+              }}
+            >
+              <LogOut size={16} />
+              <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
+            </button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '0.5rem 0' }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              color: 'var(--accent-red, #EF4444)',
+            }}
+          >
+            <AlertTriangle size={22} />
+          </div>
+          <div>
+            <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+              Are you sure you want to log out?
+            </h4>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+              You will be signed out of your current session. Any unsaved changes in progress will be lost.
+            </p>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
