@@ -214,8 +214,8 @@ engine_options = {
     'pool_reset_on_return': 'rollback',
 }
 if not is_sqlite:
-    engine_options['pool_size'] = int(os.environ.get('DB_POOL_SIZE', '10'))
-    engine_options['max_overflow'] = int(os.environ.get('DB_MAX_OVERFLOW', '20'))
+    engine_options['pool_size'] = int(os.environ.get('DB_POOL_SIZE', '5'))
+    engine_options['max_overflow'] = int(os.environ.get('DB_MAX_OVERFLOW', '5'))
     engine_options['pool_timeout'] = int(os.environ.get('DB_POOL_TIMEOUT', '30'))
 
     # PyMySQL socket timeouts to prevent hanging connection locks in cloud containers

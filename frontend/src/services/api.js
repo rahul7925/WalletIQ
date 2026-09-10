@@ -16,6 +16,7 @@ function getStoredToken() {
 
 export function setStoredToken(token) {
   try {
+    clearCache();
     if (token) {
       localStorage.setItem('walletiq_token', token);
     } else {
@@ -24,6 +25,15 @@ export function setStoredToken(token) {
   } catch (e) {
     console.error('Failed to update stored token', e);
   }
+}
+
+// ── In-Memory Cache & Request Deduplication ───────────────────────────────────
+const apiCache = new Map();
+const inFlightRequests = new Map();
+const DEFAULT_CACHE_TTL_MS = 30 * 1000; // 30 seconds
+
+export function clearCache() {
+  apiCache.clear();
 }
 
 // Render free tier spins down after 15 minutes of zero traffic.
@@ -85,6 +95,23 @@ function onRequestEnd() {
 }
 
 async function request(endpoint, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const isGet = method === 'GET';
+  const cacheKey = `${method}:${endpoint}`;
+
+  // 1. Check in-memory cache for GET requests
+  if (isGet && !options.skipCache && !options.forceRefresh) {
+    const cached = apiCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < (options.ttl || DEFAULT_CACHE_TTL_MS))) {
+      return cached.data;
+    }
+  }
+
+  // 2. Deduplicate identical concurrent in-flight GET requests
+  if (isGet && !options.skipCache && !options.forceRefresh && inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey);
+  }
+
   const url = `${API_PREFIX}${endpoint}`;
   const token = getStoredToken();
 
@@ -102,49 +129,85 @@ async function request(endpoint, options = {}) {
     headers['Content-Type'] = 'application/json';
   }
 
-  onRequestStart();
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      credentials: 'include',
-    });
-
-    // Mark server active on ANY response received from server
-    markServerActive();
-
-    // Handle file downloads
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/pdf') || contentType.includes('application/vnd.openxmlformats') || contentType.includes('text/csv')) {
-      if (!response.ok) {
-        throw new Error(`File download failed with status ${response.status}`);
-      }
-      return response.blob();
-    }
-
-    let json;
+  const execute = async () => {
+    onRequestStart();
     try {
-      json = await response.json();
-    } catch (err) {
-      if (!response.ok) {
-        throw new Error(`Server returned HTTP ${response.status}`);
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
+
+      // Mark server active on ANY response received from server
+      markServerActive();
+
+      // Handle file downloads
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/pdf') || contentType.includes('application/vnd.openxmlformats') || contentType.includes('text/csv')) {
+        if (!response.ok) {
+          throw new Error(`File download failed with status ${response.status}`);
+        }
+        return response.blob();
       }
-      throw new Error('Invalid JSON response from server');
-    }
 
-    if (!response.ok || json.success === false) {
-      const errorMsg = json.error?.message || json.message || `Request failed (${response.status})`;
-      const error = new Error(errorMsg);
-      error.status = response.status;
-      error.code = json.error?.code || 'ERROR';
-      error.details = json.error?.details || null;
-      throw error;
-    }
+      let json;
+      try {
+        json = await response.json();
+      } catch (err) {
+        if (!response.ok) {
+          throw new Error(`Server returned HTTP ${response.status}`);
+        }
+        throw new Error('Invalid JSON response from server');
+      }
 
-    return json.data;
-  } finally {
-    onRequestEnd();
+      if (!response.ok || json.success === false) {
+        const errorMsg = json.error?.message || json.message || `Request failed (${response.status})`;
+        const error = new Error(errorMsg);
+        error.status = response.status;
+        error.code = json.error?.code || 'ERROR';
+        error.details = json.error?.details || null;
+        throw error;
+      }
+
+      // Populate memory cache on successful GET
+      if (isGet && !options.skipCache) {
+        apiCache.set(cacheKey, {
+          data: json.data,
+          timestamp: Date.now(),
+        });
+      } else if (!isGet) {
+        // Any mutation clears cached GET data to ensure instant freshness
+        clearCache();
+      }
+
+      return json.data;
+    } finally {
+      onRequestEnd();
+      inFlightRequests.delete(cacheKey);
+    }
+  };
+
+  const promise = execute();
+  if (isGet && !options.skipCache && !options.forceRefresh) {
+    inFlightRequests.set(cacheKey, promise);
   }
+
+  return promise;
+}
+
+// Background session keepalive: pings /health every 9 minutes while browser tab is active
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    try {
+      if (document.visibilityState === 'visible' && getStoredToken()) {
+        fetch(`${BASE_URL}/health`, { method: 'GET', credentials: 'omit' })
+          .then((res) => {
+            if (res.ok) markServerActive();
+          })
+          .catch(() => {});
+      }
+    } catch {}
+  }, 9 * 60 * 1000);
 }
 
 
@@ -236,6 +299,9 @@ export const api = {
   getNotifications: () => request('/notifications', { method: 'GET' }),
   markNotificationRead: (id) => request(`/notifications/read/${id}`, { method: 'POST' }),
   markAllNotificationsRead: () => request('/notifications/read-all', { method: 'POST' }),
+
+  // ── 14. Cache Management ──────────────────────────────────────────────────
+  clearCache,
 };
 
 export default api;
