@@ -288,6 +288,35 @@ class TestChatbotCore(unittest.TestCase):
             res = c.get('/api/chat/context')
             self.assertIn(res.status_code, [302, 301])
 
+    # ── 10. Smart DB & Live Grounding Tests ────────────────────────────────────
+
+    def test_smart_greeting(self):
+        """'hi' should return personalized greeting with user's name, not static text."""
+        reply = ask_ai('hi', 'en', 'session_hi', user_id=self.user.id)
+        self.assertIn('Raj', reply)
+        self.assertIn('WalletIQ', reply)
+        self.assertNotIn('*(offline mode)*', reply)
+
+    def test_smart_food_spending(self):
+        """'how much i spent in food' should query DB and return food total."""
+        from app import ist_now
+        e1 = Expense(user_id=self.user.id, title='Zomato Dinner', amount=1250.0, category='Food', created_at=ist_now())
+        e2 = Expense(user_id=self.user.id, title='Grocery Store', amount=3500.0, category='Groceries', created_at=ist_now())
+        db.session.add_all([e1, e2])
+        db.session.commit()
+
+        reply = ask_ai('how much i spent in food', 'en', 'session_food', user_id=self.user.id)
+        self.assertIn('Food Spending Summary', reply)
+        self.assertIn('1,250', reply)
+        self.assertNotIn('50/30/20 Rule', reply)
+
+    def test_smart_affordability_query(self):
+        """'Can I afford a vacation trip worth ₹45,000 next month?' should compute feasibility."""
+        reply = ask_ai('Can I afford a vacation trip worth ₹45,000 next month?', 'en', 'session_trip', user_id=self.user.id)
+        self.assertIn('Affordability Analysis', reply)
+        self.assertIn('45,000', reply)
+        self.assertNotIn('*(offline mode)*', reply)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

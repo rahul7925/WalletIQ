@@ -963,6 +963,7 @@ def api_ai_chat():
         question=question,
         lang=lang,
         session_id=session_id,
+        user_id=user.id,
         user_context=user_context
     )
 

@@ -45,7 +45,12 @@ MAX_HISTORY_MESSAGES = 20        # Keep last 20 user+AI message pairs in memory
 
 def _load_api_key() -> str:
     load_dotenv(_ENV_FILE, override=True)
-    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    key = (
+        os.environ.get("GEMINI_API_KEY") or
+        os.environ.get("GOOGLE_API_KEY") or
+        os.environ.get("GOOGLE_GENAI_API_KEY") or
+        ""
+    ).strip()
     if len(key) >= 2 and key[0] == key[-1] and key[0] in ('"', "'"):
         key = key[1:-1].strip()
     return key
@@ -54,9 +59,9 @@ def _load_api_key() -> str:
 def _key_problem(key: str) -> str | None:
     if not key:
         return "missing"
-    if key in ("CHANGE_ME", "your_gemini_api_key_here"):
+    if key in ("CHANGE_ME", "your_gemini_api_key_here", "AIzaSy..."):
         return "placeholder"
-    if not (key.startswith("AIza") or key.startswith("AQ.")):
+    if not (key.startswith("AIza") or key.startswith("AQ.") or len(key) >= 30):
         return "format"
     return None
 
@@ -407,6 +412,211 @@ def _response_text(response) -> str:
 
 # ── Main Chat Entry Point ──────────────────────────────────────────────────────
 
+# ── Smart DB & Intent Engine ───────────────────────────────────────────────────
+
+def _smart_db_response(q: str, user_id: int, lang: str = 'en') -> str | None:
+    """
+    Directly queries the user's database to generate live, personalised, data-grounded answers
+    for common queries like greetings, category spending, affordability, goals, and insights.
+    Runs whenever Gemini is offline or as a fallback.
+    """
+    if not user_id:
+        return None
+    try:
+        from app import Expense, User, Budget, Goal, db, ist_now
+        import re
+
+        q_lower = q.lower().strip()
+        now = ist_now()
+
+        # 1. Greetings ("hi", "hello", "hey", "good morning")
+        greeting_words = {'hi', 'hello', 'hey', 'greetings', 'vanakkam', 'namaste', 'good morning', 'good afternoon', 'good evening'}
+        clean_q = re.sub(r'[^\w\s]', '', q_lower).strip()
+        if clean_q in greeting_words or q_lower in greeting_words:
+            user = db.session.get(User, user_id)
+            name = (user.full_name or user.username or "there").split()[0] if user else "there"
+            return (
+                f"Hello {name}! 👋 I am your WalletIQ AI Financial Advisor.\n\n"
+                "I have real-time visibility into your expenses, budgets, and savings goals. "
+                "Here are a few things you can ask me right now:\n\n"
+                "• *\"How much have I spent on food this month?\"*\n"
+                "• *\"Can I afford a trip worth ₹45,000 next month?\"*\n"
+                "• *\"Analyze my monthly budget and top expenses\"*\n"
+                "• *\"Show my active savings goals roadmap\"*\n\n"
+                "How can I assist your financial strategy today?"
+            )
+
+        # 2. Category spending queries: e.g. "how much i spent in food", "food expenses", "spending on travel"
+        category_map = {
+            'food': ['food', 'dining', 'restaurant', 'swiggy', 'zomato', 'snack', 'cafe', 'eating', 'lunch', 'dinner', 'breakfast'],
+            'groceries': ['grocery', 'groceries', 'supermarket', 'blinkit', 'zepto', 'instamart', 'vegetables'],
+            'shopping': ['shopping', 'clothes', 'clothing', 'amazon', 'flipkart', 'myntra', 'shoes', 'electronics'],
+            'entertainment': ['entertainment', 'movie', 'movies', 'netflix', 'spotify', 'games', 'gaming', 'cinema'],
+            'transport': ['transport', 'travel', 'fuel', 'petrol', 'diesel', 'uber', 'ola', 'cab', 'flight', 'train', 'bus'],
+            'utilities': ['utility', 'utilities', 'bill', 'bills', 'electricity', 'water', 'wifi', 'broadband', 'mobile', 'recharge'],
+            'healthcare': ['health', 'healthcare', 'medical', 'medicine', 'medicines', 'doctor', 'hospital', 'pharmacy'],
+            'education': ['education', 'course', 'books', 'tuition', 'school', 'college', 'udemy']
+        }
+
+        matched_cat = None
+        for cat, keywords in category_map.items():
+            if any(re.search(r'\b' + re.escape(k) + r'\b', q_lower) for k in keywords):
+                matched_cat = cat
+                break
+
+        if matched_cat and any(w in q_lower for w in ['how much', 'spent', 'spending', 'expense', 'cost', 'total', 'paid']):
+            expenses = Expense.query.filter_by(user_id=user_id).all()
+            this_month_exp = [
+                e for e in expenses
+                if e.created_at and e.created_at.month == now.month and e.created_at.year == now.year
+            ]
+            
+            target_keywords = category_map[matched_cat]
+            matching_items = [
+                e for e in this_month_exp
+                if (e.category and any(k in e.category.lower() for k in target_keywords)) or
+                   (e.title and any(k in e.title.lower() for k in target_keywords))
+            ]
+            
+            total_spent = sum(e.amount for e in matching_items)
+            cat_display = matched_cat.capitalize()
+
+            if matching_items:
+                breakdown_lines = [
+                    f"  • **{e.title}**: ₹{e.amount:,.2f} ({e.created_at.strftime('%d %b') if e.created_at else 'Recent'})"
+                    for e in matching_items[:5]
+                ]
+                extra = f"\n  *(...plus {len(matching_items) - 5} more transactions)*" if len(matching_items) > 5 else ""
+                return (
+                    f"📊 **{cat_display} Spending Summary (This Month):**\n\n"
+                    f"You have spent a total of **₹{total_spent:,.2f}** on {cat_display} across **{len(matching_items)}** recorded transaction(s) this month.\n\n"
+                    f"**Recent transactions:**\n" + "\n".join(breakdown_lines) + extra +
+                    f"\n\n💡 *Tip: Check Command Center or Spending Insights to view month-over-month category trends!*"
+                )
+            else:
+                return (
+                    f"📊 **{cat_display} Spending Summary:**\n\n"
+                    f"You have **₹0.00** recorded for {cat_display} expenses this month.\n\n"
+                    f"If you recently made purchases in {cat_display}, log them via the **+ Add Expense** button so I can track them for you!"
+                )
+
+        # 3. Affordability queries: e.g. "Can I afford a vacation trip worth ₹45,000 next month?"
+        if any(w in q_lower for w in ['afford', 'can i buy', 'can i purchase', 'can i spend', 'can i take a trip', 'plan a trip', 'worth']):
+            amount_match = re.search(r'(?:₹|rs\.?|inr)?\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+)(?:\s*(?:k|thousand|lakh|lakhs))?', q_lower)
+            target_amount = 0.0
+            if amount_match:
+                full_matched_str = amount_match.group(0).lower()
+                num_str = amount_match.group(1).replace(',', '')
+                try:
+                    target_amount = float(num_str)
+                    if 'k' in full_matched_str or 'thousand' in full_matched_str:
+                        target_amount *= 1000
+                    elif 'lakh' in full_matched_str:
+                        target_amount *= 100000
+                except ValueError:
+                    target_amount = 0.0
+
+            if target_amount > 0:
+                user = db.session.get(User, user_id)
+                income = float(user.monthly_income or 0) if user else 0.0
+                expenses = Expense.query.filter_by(user_id=user_id).all()
+                this_month_spent = sum(
+                    e.amount for e in expenses
+                    if e.created_at and e.created_at.month == now.month and e.created_at.year == now.year
+                )
+                net_savings_per_month = max(0.0, income - this_month_spent) if income > 0 else 0.0
+
+                if income == 0:
+                    return (
+                        f"⚠️ To calculate whether you can afford **₹{target_amount:,.2f}**, please set your **Monthly Income** in Settings or Financial Health first!"
+                    )
+
+                if net_savings_per_month >= target_amount:
+                    surplus = net_savings_per_month - target_amount
+                    return (
+                        f"✅ **Affordability Analysis: Feasible!**\n\n"
+                        f"• **Target Purchase/Trip:** ₹{target_amount:,.2f}\n"
+                        f"• **Monthly Income:** ₹{income:,.2f}\n"
+                        f"• **Current Monthly Outflow:** ₹{this_month_spent:,.2f}\n"
+                        f"• **Monthly Net Surplus:** ₹{net_savings_per_month:,.2f}\n\n"
+                        f"**Verdict:** Based on your current cash flows, you generate enough surplus to afford this! "
+                        f"After paying ₹{target_amount:,.2f}, you will still retain **₹{surplus:,.2f}** in monthly buffer.\n\n"
+                        f"💡 *Recommendation: Set up a dedicated short-term goal in Goal Planner to isolate this money from everyday spending.*"
+                    )
+                elif (net_savings_per_month * 2) >= target_amount:
+                    months_needed = round(target_amount / max(1.0, net_savings_per_month), 1)
+                    return (
+                        f"⚠️ **Affordability Analysis: Feasible with 1–2 months of planning**\n\n"
+                        f"• **Target Purchase/Trip:** ₹{target_amount:,.2f}\n"
+                        f"• **Monthly Net Surplus:** ₹{net_savings_per_month:,.2f}\n\n"
+                        f"**Verdict:** Paying ₹{target_amount:,.2f} in a single month would exceed your monthly free cash flow by ₹{target_amount - net_savings_per_month:,.2f}.\n\n"
+                        f"However, if you spread this across **{months_needed} months** by setting aside **₹{target_amount/months_needed:,.2f}/month**, you can comfortably fund this without incurring credit card debt or dipping into emergency savings."
+                    )
+                else:
+                    return (
+                        f"🛑 **Affordability Analysis: High Risk**\n\n"
+                        f"• **Target Purchase/Trip:** ₹{target_amount:,.2f}\n"
+                        f"• **Monthly Net Surplus:** ₹{net_savings_per_month:,.2f}\n\n"
+                        f"**Verdict:** This expense is significantly higher than your available monthly surplus. Funding this immediately would likely disrupt your basic necessities or emergency buffer.\n\n"
+                        f"💡 *Recommendation: Open Goal Planner and create a 6–12 month savings milestone of ₹{target_amount/6:,.2f}/month.*"
+                    )
+
+        # 4. Report Comparison
+        if 'compare' in q_lower and ('month' in q_lower or '202' in q_lower or 'vs' in q_lower or 'and' in q_lower or 'report' in q_lower):
+            from app import ReportHistory
+            from services.report_service import generate_ai_comparison
+            user_reports = ReportHistory.query.filter_by(user_id=user_id).order_by(ReportHistory.created_at.desc()).limit(2).all()
+            if len(user_reports) == 2:
+                try:
+                    comp = generate_ai_comparison(user_id, user_reports[1].id, user_reports[0].id)
+                    return comp['narrative']
+                except Exception as e:
+                    log.warning(f"Failed to auto-compare reports: {e}")
+            else:
+                return "To compare reports, please generate at least two historical reports first in the Report Studio page! 📊"
+
+        # 5. Goal Roadmap
+        if any(w in q_lower for w in ['goal', 'laptop', 'macbook', 'wedding', 'retirement', 'roadmap']):
+            active_goals = Goal.query.filter_by(user_id=user_id, status='Active').all()
+            if active_goals:
+                lines = ["🎯 **Your WalletIQ Goals Roadmap & Action Plan:**", ""]
+                for g in active_goals:
+                    prog = g.progress.first()
+                    prob = prog.success_probability if prog else 50.0
+                    lines.append(f"• **Goal**: {g.name} (Target: ₹{g.target_amount:,.0f})")
+                    lines.append(f"  - Current Savings: ₹{g.current_savings:,.0f} ({g.current_savings/g.target_amount*100:.1f}%)")
+                    lines.append(f"  - Monthly Target: ₹{g.monthly_contribution:,.0f}/month (Daily target: ₹{prog.daily_target if prog else 0:,.0f})")
+                    lines.append(f"  - Completion Success Probability: **{prob}%**")
+                    lines.append("")
+                lines.append("💡 *Tip: You can set new savings goals directly in the Goal Planner dashboard.*")
+                return "\n".join(lines)
+            else:
+                return "You haven't set any financial savings goals yet! 🎯 Open the Goal Planner in the sidebar to define one."
+
+        # 6. Spending Insights / Subscriptions
+        if any(w in q_lower for w in ['overspend', 'spend on', 'category', 'insight', 'subscription', 'duplicate']):
+            from services.insight_service import generate_spending_insights_data
+            data = generate_spending_insights_data(user_id)
+            lines = ["📊 **WalletIQ AI Spending Patterns & Insights:**", ""]
+            lines.append(f"• Total expenses this month: **₹{data['total_this_month']:,.2f}** ({data['percentage_change']:+.1f}% vs last month)")
+            if data['fastest_growing_category'] != "None":
+                lines.append(f"• Fastest growing category: **{data['fastest_growing_category']}** (+{data['fastest_growing_percentage']:.1f}%)")
+            if data['ranked_categories']:
+                lines.append(f"• Top Category: **{data['ranked_categories'][0]['category']}** (₹{data['ranked_categories'][0]['amount']:,.2f})")
+            if data.get('suspected_subscriptions'):
+                lines.append("• ⚠️ **Potential subscription waste detected**:")
+                for sub in data['suspected_subscriptions']:
+                    lines.append(f"  - {sub['title']}: ₹{sub['amount']:,.0f} (recurring pattern)")
+            return "\n".join(lines)
+
+    except Exception as exc:
+        log.warning(f"Error in _smart_db_response: {exc}")
+
+    return None
+
+
+# ── Main Chat Entry Point ──────────────────────────────────────────────────────
+
 def ask_ai(question: str, lang: str = 'en',
            session_id: str = 'default', user_id: int = None,
            user_context: str = None, **kwargs) -> str:
@@ -422,84 +632,37 @@ def ask_ai(question: str, lang: str = 'en',
     if not question or not question.strip():
         return "Please ask a financial question and I'll be happy to help! 😊"
 
+    question = question.strip()
     api_key = _load_api_key()
     problem = _key_problem(api_key)
 
-    if problem == "missing":
-        log.warning("GEMINI_API_KEY not set — using offline advisor")
-        return _fallback(question, lang)
-    if problem == "placeholder":
-        return (
-            "**Gemini API key not configured.**\n\n"
-            "1. Open https://aistudio.google.com/apikey\n"
-            "2. Create a free API key\n"
-            "3. Add to `.env`: `GEMINI_API_KEY=\"your-key\"`\n"
-            "4. Restart the server (`Ctrl+C`, then `py -3 run.py`)"
-        )
-    if problem == "format":
-        return (
-            "**Unrecognized API key format.**\n\n"
-            "Use a key from https://aistudio.google.com/apikey "
-            "(starts with `AIza` or `AQ.`)."
-        )
+    # 1. If Gemini API Key is missing or invalid, run smart DB responses & offline guidance
+    if problem:
+        log.warning(f"GEMINI_API_KEY issue ({problem}) — using smart offline assistant")
+        smart_ans = _smart_db_response(question, user_id, lang)
+        if smart_ans:
+            return smart_ans
 
-    question = question.strip()
-    
-    # ── Quick Intent Interceptors / Custom Responses ───────────────────────────
-    q_lower = question.lower()
-    
-    # Intent 1: Report Comparison
-    if 'compare' in q_lower and ('month' in q_lower or '202' in q_lower or 'vs' in q_lower or 'and' in q_lower):
-        from app import ReportHistory
-        from services.report_service import generate_ai_comparison
-        # Attempt to find the last 2 reports for comparison
-        user_reports = ReportHistory.query.filter_by(user_id=user_id).order_by(ReportHistory.created_at.desc()).limit(2).all()
-        if len(user_reports) == 2:
-            try:
-                comp = generate_ai_comparison(user_id, user_reports[1].id, user_reports[0].id)
-                return comp['narrative']
-            except Exception as e:
-                log.warning(f"Failed to auto-compare reports: {e}")
-        else:
-            return "To compare reports, please generate at least two historical reports first in the Report Studio page! 📊"
+        offline_ans = _fallback(question, lang)
+        if problem == "missing":
+            return offline_ans + (
+                "\n\n---\n"
+                "💡 **Activate Live AI (ChatGPT / Gemini Mode):**\n"
+                "WalletIQ is currently in offline mode because `GEMINI_API_KEY` is not set on Render. "
+                "To enable live, conversational AI answers to any question:\n"
+                "1. Get a **100% free key** in 30 seconds at [Google AI Studio](https://aistudio.google.com/apikey)\n"
+                "2. Add `GEMINI_API_KEY` to your Render Dashboard Environment Variables."
+            )
+        elif problem == "placeholder":
+            return (
+                "**Gemini API key not configured.**\n\n"
+                "1. Open https://aistudio.google.com/apikey\n"
+                "2. Create a free API key\n"
+                "3. Add to Render Environment Variables: `GEMINI_API_KEY=\"your-key\"`\n"
+            )
+        return offline_ans
 
-    # Intent 2: Goal tracking
-    if any(w in q_lower for w in ['goal', 'laptop', 'macbook', 'trip', 'travel', 'wedding', 'retirement']):
-        from app import Goal
-        active_goals = Goal.query.filter_by(user_id=user_id, status='Active').all()
-        if active_goals:
-            lines = ["🎯 **Your WalletIQ Goals Roadmap & Action Plan:**", ""]
-            for g in active_goals:
-                prog = g.progress.first()
-                prob = prog.success_probability if prog else 50.0
-                lines.append(f"• **Goal**: {g.name} (Target: ₹{g.target_amount:,.0f})")
-                lines.append(f"  - Current Savings: ₹{g.current_savings:,.0f} ({g.current_savings/g.target_amount*100:.1f}%)")
-                lines.append(f"  - Monthly Target: ₹{g.monthly_contribution:,.0f}/month (Daily target: ₹{prog.daily_target if prog else 0:,.0f})")
-                lines.append(f"  - Completion Success Probability: **{prob}%**")
-                lines.append("")
-            lines.append("💡 *Tip: You can set new savings goals directly in the Goal Planner dashboard.*")
-            return "\n".join(lines)
-        else:
-            return "You haven't set any financial savings goals yet! 🎯 Open the Goal Planner in the sidebar to define one."
-
-    # Intent 3: Spending Insights
-    if any(w in q_lower for w in ['overspend', 'spend on', 'category', 'insight', 'subscription', 'duplicate']):
-        from services.insight_service import generate_spending_insights_data
-        data = generate_spending_insights_data(user_id)
-        lines = ["📊 **WalletIQ AI Spending Patterns & Insights:**", ""]
-        lines.append(f"• Total expenses this month: **₹{data['total_this_month']:,.2f}** ({data['percentage_change']:+.1f}% vs last month)")
-        if data['fastest_growing_category'] != "None":
-            lines.append(f"• Fastest growing category: **{data['fastest_growing_category']}** (+{data['fastest_growing_percentage']:.1f}%)")
-        if data['ranked_categories']:
-            lines.append(f"• Top Category: **{data['ranked_categories'][0]['category']}** (₹{data['ranked_categories'][0]['amount']:,.2f})")
-        if data['suspected_subscriptions']:
-            lines.append("• ⚠️ **Potential subscription waste detected**:")
-            for sub in data['suspected_subscriptions']:
-                lines.append(f"  - {sub['title']}: ₹{sub['amount']:,.0f} (recurring pattern)")
-        return "\n".join(lines)
-
-
-    # Build user context from DB (the key personalisation step)
+    # 2. When API key is available, run Gemini with live user financial context
     if user_context is None:
         user_context = build_financial_context(user_id) if user_id else ""
 
@@ -534,21 +697,25 @@ def ask_ai(question: str, lang: str = 'en',
             break
 
     if quota_errors == len(MODELS):
+        smart_ans = _smart_db_response(question, user_id, lang)
+        fallback_body = smart_ans if smart_ans else _fallback(question, lang)
         return (
-            "**Gemini free quota is used up for all models.**\n\n"
-            "Your API key is valid. Please wait a few minutes and try again, or check usage at "
-            "https://aistudio.google.com\n\n"
-            "Meanwhile, here is offline guidance:\n\n" + _fallback(question, lang)
+            "**Gemini free quota is temporarily used up for all models.**\n\n"
+            "Your API key is valid. Please wait a moment, or check usage at https://aistudio.google.com\n\n"
+            "Meanwhile, here is your personalised data:\n\n" + fallback_body
         )
 
     if last_err and any(x in str(last_err).lower() for x in ('api key', 'unauthenticated', '401', '403')):
         return (
             "**Gemini rejected the API key.**\n\n"
             "Create a new key at https://aistudio.google.com/apikey, "
-            "update `.env`, and restart the server."
+            "update Render Environment Variables, and restart the service."
         )
 
     log.error(f"All Gemini models failed session={session_id}: {last_err}")
+    smart_ans = _smart_db_response(question, user_id, lang)
+    if smart_ans:
+        return smart_ans
     return _fallback(question, lang)
 
 
@@ -589,7 +756,7 @@ def _fallback(q: str, lang: str) -> str:
         )
 
     # English fallback — rich, structured
-    if any(w in q_lower for w in ['save', 'saving', 'savings', 'how much']):
+    if any(w in q_lower for w in ['how to save', 'saving strategy', 'save more', '50/30/20', 'saving tips', 'ways to save', 'savings framework', 'saving potential', 'save money']):
         return (
             "**💰 Savings Strategy — The 3-Step Framework**\n\n"
             "**Step 1 — Calculate Your Savings Potential:**\n"
