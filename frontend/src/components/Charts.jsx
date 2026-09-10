@@ -1,35 +1,33 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 export const CAT_COLORS = {
-  Food: '#F59E0B',          // Vibrant Warm Amber Gold
-  Shopping: '#EC4899',      // Electric Fuchsia Rose
-  Bills: '#3B82F6',         // Bright Sapphire Blue
-  Utilities: '#6366F1',     // Modern Indigo Violet
-  Travel: '#06B6D4',        // Electric Cyan Aqua
-  Transport: '#0EA5E9',     // Sky Blue
-  Entertainment: '#8B5CF6',  // Vivid Royal Purple
-  Health: '#10B981',        // Emerald Green
-  Investment: '#14B8A6',    // Mint Teal
-  Education: '#F97316',     // Vivid Sunset Orange
-  Savings: '#22C55E',       // Bright Green
-  EMI: '#EF4444',           // Crimson Flame
-  General: '#EAB308',       // Metallic Gold
-  Others: '#A855F7',        // Bright Orchid Violet
+  Food: '#FACC15',          // Bright Yellow
+  Bills: '#2563EB',         // Royal Blue
+  Travel: '#06B6D4',        // Bright Cyan
+  Entertainment: '#9333EA',  // Vivid Purple
+  Shopping: '#EC4899',      // Hot Pink
+  Health: '#EF4444',        // Bright Red
+  Investment: '#16A34A',    // Vibrant Green
+  Transport: '#F97316',     // Bright Orange
+  Utilities: '#6366F1',     // Bright Indigo
+  Savings: '#22C55E',       // Fresh Lime Green
+  Education: '#0EA5E9',     // Sky Blue
+  EMI: '#DC2626',           // Deep Red
+  General: '#3B82F6',       // Electric Blue
+  Others: '#8B5CF6',        // Bright Violet
 };
 
 const DEFAULT_PALETTE = [
-  '#F59E0B',
-  '#3B82F6',
-  '#EC4899',
-  '#10B981',
-  '#8B5CF6',
-  '#06B6D4',
-  '#F97316',
-  '#14B8A6',
-  '#6366F1',
-  '#EF4444',
-  '#22C55E',
-  '#A855F7',
+  '#2563EB', // Blue
+  '#16A34A', // Green
+  '#FACC15', // Yellow
+  '#EF4444', // Red
+  '#9333EA', // Purple
+  '#F97316', // Orange
+  '#06B6D4', // Cyan
+  '#EC4899', // Pink
+  '#14B8A6', // Teal
+  '#6366F1', // Indigo
 ];
 
 function getColor(label, idx = 0) {
