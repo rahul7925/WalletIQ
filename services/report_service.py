@@ -1059,83 +1059,183 @@ def get_storage_stats(user_id: int) -> dict:
 def generate_ai_comparison(user_id: int, report_a_id: int, report_b_id: int) -> dict:
     """
     Compares two compiled reports using their stored names/metadata to extract month/year info,
-    then re-aggregates their financial data and produces an AI-authored comparison narrative.
-    Falls back to a rule-based summary if Gemini is unavailable.
+    then re-aggregates their financial data and produces an AI-authored comparison narrative
+    focusing on spending drift, cash leakages, and savings trends.
     """
-    from app import ReportHistory
+    from app import ReportHistory, ist_now
     import re
 
-    def extract_year_month(report_name: str):
+    def extract_year_month(report):
+        if not report:
+            return ist_now().year, ist_now().month
+
         month_map = {m.lower(): i + 1 for i, m in enumerate(
             ["january", "february", "march", "april", "may", "june",
              "july", "august", "september", "october", "november", "december"])}
-        parts = report_name.lower().split()
-        month = None
-        year = None
-        for p in parts:
-            if p in month_map:
-                month = month_map[p]
-            if re.match(r'^\d{4}$', p):
-                year = int(p)
-        return year, month
+        
+        # 1. Try report_name
+        r_name = (report.report_name or '').lower().replace('—', ' ').replace('-', ' ')
+        parts = r_name.split()
+        m = next((month_map[p] for p in parts if p in month_map), None)
+        y = next((int(p) for p in parts if re.match(r'^\d{4}$', p)), None)
+        if m and y:
+            return y, m
+
+        # 2. Try file_name e.g. WalletIQ_Report_username_2026_9.pdf
+        fn_parts = (report.file_name or '').replace('.', '_').split('_')
+        for idx, p in enumerate(fn_parts):
+            if re.match(r'^\d{4}$', p) and idx + 1 < len(fn_parts):
+                try:
+                    cand_y = int(p)
+                    cand_m = int(fn_parts[idx + 1])
+                    if 1 <= cand_m <= 12:
+                        return cand_y, cand_m
+                except ValueError:
+                    pass
+
+        # 3. Try generated_date or created_at
+        dt = report.generated_date or report.created_at
+        if dt:
+            return dt.year, dt.month
+
+        return ist_now().year, ist_now().month
 
     ra = ReportHistory.query.filter_by(id=report_a_id, user_id=user_id).first()
     rb = ReportHistory.query.filter_by(id=report_b_id, user_id=user_id).first()
     if not ra or not rb:
         return {'error': 'One or both reports not found'}
 
-    ya, ma = extract_year_month(ra.report_name)
-    yb, mb = extract_year_month(rb.report_name)
-
-    if not all([ya, ma, yb, mb]):
-        return {'error': 'Could not parse report dates for comparison'}
+    ya, ma = extract_year_month(ra)
+    yb, mb = extract_year_month(rb)
 
     data_a = get_report_data(user_id, ya, ma)
     data_b = get_report_data(user_id, yb, mb)
 
-    # Build numeric diff table
     def delta(val_a, val_b):
         diff = val_b - val_a
         pct = ((diff / val_a) * 100.0) if val_a != 0 else 0.0
         arrow = '▲' if diff > 0 else ('▼' if diff < 0 else '—')
         return {'a': val_a, 'b': val_b, 'diff': diff, 'pct': round(pct, 1), 'arrow': arrow}
 
+    inc_delta = delta(data_a.get('income', 0.0), data_b.get('income', 0.0))
+    exp_delta = delta(data_a.get('expenses_total', 0.0), data_b.get('expenses_total', 0.0))
+    sav_delta = delta(data_a.get('savings', 0.0), data_b.get('savings', 0.0))
+    hlth_delta = delta(data_a.get('health_score', 0), data_b.get('health_score', 0))
+    port_delta = delta(data_a.get('portfolio_value', 0.0), data_b.get('portfolio_value', 0.0))
+
+    # Calculate Savings Rates
+    inc_a = data_a.get('income', 0.0)
+    inc_b = data_b.get('income', 0.0)
+    sav_a = data_a.get('savings', 0.0)
+    sav_b = data_b.get('savings', 0.0)
+    rate_a = (sav_a / inc_a * 100.0) if inc_a > 0 else 0.0
+    rate_b = (sav_b / inc_b * 100.0) if inc_b > 0 else 0.0
+    rate_diff = rate_b - rate_a
+
+    # Category Spending Drift & Leakages
+    cats_a = data_a.get('cat_totals', {})
+    cats_b = data_b.get('cat_totals', {})
+    all_cats = set(cats_a.keys()) | set(cats_b.keys())
+    category_drift = []
+    leakages = []
+
+    for c in all_cats:
+        c_a = cats_a.get(c, 0.0)
+        c_b = cats_b.get(c, 0.0)
+        c_diff = c_b - c_a
+        c_pct = ((c_diff / c_a) * 100.0) if c_a > 0 else (100.0 if c_b > 0 else 0.0)
+        c_item = {
+            'category': c,
+            'prev': c_a,
+            'curr': c_b,
+            'diff': c_diff,
+            'pct': round(c_pct, 1),
+            'direction': 'up' if c_diff > 0 else ('down' if c_diff < 0 else 'flat')
+        }
+        category_drift.append(c_item)
+
+        # Flag potential cash leakages: spending surge > 15% or over 2,000 increase
+        if c_diff > 2000 or (c_pct > 15.0 and c_diff > 500):
+            leakages.append(c_item)
+
+    category_drift.sort(key=lambda x: abs(x['diff']), reverse=True)
+    leakages.sort(key=lambda x: x['diff'], reverse=True)
+
+    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    period_a_label = f"{month_names[ma-1]} {ya}" if 1 <= ma <= 12 else f"Period A"
+    period_b_label = f"{month_names[mb-1]} {yb}" if 1 <= mb <= 12 else f"Period B"
+
+    # Multi-section structured narrative
+    lines = [
+        f"### 📊 Comparative AI Review: {period_a_label} vs {period_b_label}",
+        "",
+        "**Core Variance Indicators:**",
+        f"• **Monthly Income**: ₹{inc_delta['a']:,.0f} → ₹{inc_delta['b']:,.0f} ({inc_delta['arrow']} {inc_delta['pct']:+.1f}%)",
+        f"• **Total Expenses**: ₹{exp_delta['a']:,.0f} → ₹{exp_delta['b']:,.0f} ({exp_delta['arrow']} {exp_delta['pct']:+.1f}%)",
+        f"• **Net Savings**: ₹{sav_delta['a']:,.0f} → ₹{sav_delta['b']:,.0f} ({sav_delta['arrow']} {sav_delta['pct']:+.1f}%)",
+        f"• **Savings Rate**: {rate_a:.1f}% → {rate_b:.1f}% ({'▲' if rate_diff >= 0 else '▼'} {rate_diff:+.1f} pts)",
+        f"• **Financial Health**: {hlth_delta['a']}/100 → {hlth_delta['b']}/100 ({hlth_delta['arrow']} {hlth_delta['pct']:+.1f} pts)",
+        "",
+        "#### 💸 Spending Drift Analysis"
+    ]
+
+    if exp_delta['diff'] > 0:
+        lines.append(f"Spending expanded by **₹{exp_delta['diff']:,.0f}** (+{exp_delta['pct']}%) between {period_a_label} and {period_b_label}. The highest spending shifts occurred in:")
+    elif exp_delta['diff'] < 0:
+        lines.append(f"Discipline improved with expenses dropping by **₹{abs(exp_delta['diff']):,.0f}** ({exp_delta['pct']}%) from {period_a_label} to {period_b_label}. Key category drifts:")
+    else:
+        lines.append(f"Total spending was virtually flat between {period_a_label} and {period_b_label}.")
+
+    for d in category_drift[:4]:
+        sign = '+' if d['diff'] > 0 else ''
+        lines.append(f"• **{d['category']}**: ₹{d['prev']:,.0f} → ₹{d['curr']:,.0f} ({sign}₹{d['diff']:,.0f}, {sign}{d['pct']}%)")
+
+    lines.append("")
+    lines.append("#### 🚨 Cash Leakages & Category Anomalies")
+    if leakages:
+        lines.append(f"Detected **{len(leakages)} potential cash leakage points** showing rapid outflow surges:")
+        for l in leakages:
+            lines.append(f"• ⚠️ **{l['category']}** spiked by +₹{l['diff']:,.0f} (+{l['pct']}%) compared to {period_a_label}.")
+        lines.append("Auditing these line items is advised before locking the upcoming monthly budget.")
+    else:
+        lines.append("✅ No critical cash leakage spikes detected. All categories maintained steady, predictable velocity within regular parameters.")
+
+    lines.append("")
+    lines.append("#### 📈 Savings Trends & Trajectory")
+    if sav_delta['diff'] > 0:
+        lines.append(f"✅ Positive savings acceleration: Retained an additional **₹{sav_delta['diff']:,.0f}** in {period_b_label}, elevating your overall savings efficiency to **{rate_b:.1f}%**.")
+    elif sav_delta['diff'] < 0:
+        lines.append(f"⚠️ Net savings compressed by **₹{abs(sav_delta['diff']):,.0f}**, reducing the savings rate from {rate_a:.1f}% to **{rate_b:.1f}%**.")
+    else:
+        lines.append(f"Savings velocity held steady with a **{rate_b:.1f}%** retention rate.")
+
+    lines.append("")
+    lines.append("#### 💡 AI Action Directives")
+    if leakages:
+        lines.append(f"1. Cap **{leakages[0]['category']}** budget by setting a strict weekly alert threshold.")
+    lines.append(f"2. Auto-transfer ₹{max(0.0, sav_delta['b']) * 0.3:,.0f} into low-risk recurring deposits or mutual funds upon monthly income credit.")
+    lines.append("3. Review recurring subscriptions and variable utility payments to preserve your net margin.")
+
+    narrative_text = '\n'.join(lines)
+
     comparison = {
         'report_a': ra.report_name,
         'report_b': rb.report_name,
-        'income':        delta(data_a['income'],        data_b['income']),
-        'expenses':      delta(data_a['expenses_total'], data_b['expenses_total']),
-        'savings':       delta(data_a['savings'],        data_b['savings']),
-        'health_score':  delta(data_a['health_score'],   data_b['health_score']),
-        'portfolio':     delta(data_a['portfolio_value'], data_b['portfolio_value']),
+        'period_a': period_a_label,
+        'period_b': period_b_label,
+        'income': inc_delta,
+        'expenses': exp_delta,
+        'savings': sav_delta,
+        'health_score': hlth_delta,
+        'portfolio': port_delta,
+        'rate_a': round(rate_a, 1),
+        'rate_b': round(rate_b, 1),
+        'rate_diff': round(rate_diff, 1),
+        'category_drift': category_drift,
+        'leakages': leakages,
+        'narrative': narrative_text,
+        'analysis': narrative_text,
+        'comparison': narrative_text,
     }
 
-    # Rule-based narrative
-    lines = [f"📊 Comparing **{ra.report_name}** vs **{rb.report_name}**:", ""]
-
-    def fmt(c, label):
-        sign = '+' if c['diff'] >= 0 else ''
-        return f"• **{label}**: ₹{c['a']:,.0f} → ₹{c['b']:,.0f}  ({c['arrow']} {sign}{c['pct']}%)"
-
-    lines += [
-        fmt(comparison['income'], 'Monthly Income'),
-        fmt(comparison['expenses'], 'Total Expenses'),
-        fmt(comparison['savings'], 'Net Savings'),
-        f"• **Financial Health Score**: {comparison['health_score']['a']}/100 → {comparison['health_score']['b']}/100 ({comparison['health_score']['arrow']} {comparison['health_score']['pct']:+.1f} pts)",
-        fmt(comparison['portfolio'], 'Portfolio Value'),
-        ""
-    ]
-
-    # Key insight sentence
-    if comparison['savings']['diff'] > 0:
-        lines.append(f"✅ Savings improved by ₹{comparison['savings']['diff']:,.0f} — great financial progress!")
-    elif comparison['savings']['diff'] < 0:
-        lines.append(f"⚠️ Savings declined by ₹{abs(comparison['savings']['diff']):,.0f}. Review spending categories to identify reduction opportunities.")
-
-    if comparison['health_score']['diff'] > 0:
-        lines.append(f"📈 Financial Health Score rose by {comparison['health_score']['diff']:.0f} points — your fiscal discipline is paying off.")
-    elif comparison['health_score']['diff'] < 0:
-        lines.append(f"📉 Health Score dropped by {abs(comparison['health_score']['diff']):.0f} pts. Check budget adherence and savings rate.")
-
-    comparison['narrative'] = '\n'.join(lines)
     return comparison

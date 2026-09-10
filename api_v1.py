@@ -1303,26 +1303,63 @@ def api_spending_insights():
 @api_v1.route('/reports', methods=['GET'])
 @api_login_required
 def api_get_reports():
-    from app import ReportHistory
+    from app import ReportHistory, ist_now
     from services.report_service import get_storage_stats
+    import re
 
     user = _get_user()
     reports = ReportHistory.query.filter_by(user_id=user.id).order_by(
-        ReportHistory.generated_date.desc()
+        ReportHistory.id.desc()
     ).all()
 
-    items = [{
-        'id': r.id,
-        'report_name': r.report_name,
-        'report_type': r.report_type,
-        'file_name': r.file_name,
-        'file_size': r.file_size,
-        'version': r.version,
-        'is_favorite': r.is_favorite,
-        'share_key': r.share_key,
-        'generated_date': r.generated_date.isoformat() if r.generated_date else None,
-        'download_count': r.download_count,
-    } for r in reports]
+    month_map = {m.lower(): i + 1 for i, m in enumerate(
+        ['january', 'february', 'march', 'april', 'may', 'june',
+         'july', 'august', 'september', 'october', 'november', 'december'])}
+
+    items = []
+    for r in reports:
+        # Extract month & year from report_name or file_name if possible
+        parts = (r.report_name or '').lower().replace('—', ' ').replace('-', ' ').split()
+        m = next((month_map[p] for p in parts if p in month_map), None)
+        y = next((int(p) for p in parts if re.match(r'^\d{4}$', p)), None)
+        if not m or not y:
+            fn_parts = (r.file_name or '').replace('.', '_').split('_')
+            for idx, p in enumerate(fn_parts):
+                if re.match(r'^\d{4}$', p) and idx + 1 < len(fn_parts):
+                    try:
+                        cand_y = int(p)
+                        cand_m = int(fn_parts[idx + 1])
+                        if 1 <= cand_m <= 12:
+                            y = cand_y
+                            m = cand_m
+                    except ValueError:
+                        pass
+        if not m:
+            m = (r.generated_date or r.created_at or ist_now()).month
+        if not y:
+            y = (r.generated_date or r.created_at or ist_now()).year
+
+        is_excel = 'EXCEL' in (r.report_type or '').upper() or (r.file_name or '').endswith('.xlsx')
+        fmt = 'excel' if is_excel else 'pdf'
+
+        items.append({
+            'id': r.id,
+            'report_name': r.report_name,
+            'title': r.report_name,
+            'name': r.report_name,
+            'report_type': r.report_type,
+            'format': fmt,
+            'file_name': r.file_name,
+            'file_size': r.file_size or 0,
+            'month': m,
+            'year': y,
+            'version': r.version or 1,
+            'is_favorite': r.is_favorite or False,
+            'share_key': r.share_key,
+            'generated_date': r.generated_date.isoformat() if r.generated_date else None,
+            'created_at': r.created_at.isoformat() if r.created_at else (r.generated_date.isoformat() if r.generated_date else None),
+            'download_count': r.download_count or 0,
+        })
 
     stats = get_storage_stats(user.id)
     return success_response({'reports': items, 'stats': stats}, "Reports fetched", 200)
@@ -1331,32 +1368,77 @@ def api_get_reports():
 @api_v1.route('/reports/generate', methods=['POST'])
 @api_login_required
 def api_generate_report():
-    from services.report_service import generate_pdf_report, generate_excel_report
-    from app import ist_now
+    from services.report_service import generate_pdf_report, generate_excel_report, make_report_name
+    from app import db, ReportHistory, ist_now
 
     user = _get_user()
     data = request.get_json(silent=True) or request.form
 
-    report_type = data.get('report_type', 'PDF').upper()
+    raw_format = str(data.get('format') or data.get('report_type') or 'PDF').strip().upper()
+    is_excel = 'EXCEL' in raw_format or 'XLSX' in raw_format
+    report_type_clean = 'EXCEL' if is_excel else 'PDF'
+    
     now = ist_now()
-    year = int(data.get('year') or now.year)
-    month = int(data.get('month') or now.month)
+    try:
+        year = int(data.get('year') or now.year)
+        month = int(data.get('month') or now.month)
+    except (TypeError, ValueError):
+        year, month = now.year, now.month
 
     try:
-        if report_type == 'EXCEL':
-            report_record = generate_excel_report(user.id, year, month)
+        if is_excel:
+            filepath = generate_excel_report(user.id, year, month)
         else:
-            report_record = generate_pdf_report(user.id, year, month)
+            filepath = generate_pdf_report(user.id, year, month)
     except Exception as exc:
         log.error(f"Report generation error: {exc}")
         return error_response("REPORT_ERROR", f"Report generation failed: {exc}", 500)
 
+    if not filepath or not os.path.exists(filepath):
+        return error_response("REPORT_ERROR", "Failed to compile report document on disk.", 500)
+
+    file_size = os.path.getsize(filepath)
+    file_name = os.path.basename(filepath)
+    base_name = make_report_name("Monthly", year, month)
+
+    prev_count = ReportHistory.query.filter_by(
+        user_id=user.id,
+        file_name=file_name
+    ).count()
+    version = prev_count + 1
+
+    report_name = base_name if version == 1 else f"{base_name} (v{version})"
+
+    report_record = ReportHistory(
+        user_id=user.id,
+        report_name=report_name,
+        report_type=report_type_clean,
+        file_name=file_name,
+        file_path=filepath,
+        file_size=file_size,
+        version=version,
+        generated_date=ist_now(),
+        created_at=ist_now(),
+    )
+    db.session.add(report_record)
+    try:
+        safe_commit(db.session)
+    except Exception as exc:
+        db.session.rollback()
+        return error_response("DB_ERROR", f"Failed to persist report record: {exc}", 500)
+
     return success_response({
         'id': report_record.id,
         'report_name': report_record.report_name,
+        'title': report_record.report_name,
+        'name': report_record.report_name,
         'file_name': report_record.file_name,
         'file_size': report_record.file_size,
         'report_type': report_record.report_type,
+        'format': 'excel' if is_excel else 'pdf',
+        'month': month,
+        'year': year,
+        'created_at': report_record.created_at.isoformat() if report_record.created_at else None,
     }, "Report generated successfully", 201)
 
 
@@ -1365,11 +1447,54 @@ def api_generate_report():
 @api_login_required
 def api_download_report(rid):
     from app import db, ReportHistory, ist_now
+    from services.report_service import generate_pdf_report, generate_excel_report
+    import re
 
     user = _get_user()
     report = _owned(ReportHistory, rid, user.id)
-    if not report or not report.file_path or not os.path.exists(report.file_path):
-        return error_response("NOT_FOUND", "Report file not found on disk.", 404)
+    if not report:
+        return error_response("NOT_FOUND", "Report not found.", 404)
+
+    # If physical file missing on ephemeral container filesystem, regenerate on the fly
+    if not report.file_path or not os.path.exists(report.file_path):
+        month_map = {m.lower(): i + 1 for i, m in enumerate(
+            ['january', 'february', 'march', 'april', 'may', 'june',
+             'july', 'august', 'september', 'october', 'november', 'december'])}
+        parts = (report.report_name or '').lower().replace('—', ' ').replace('-', ' ').split()
+        m = next((month_map[p] for p in parts if p in month_map), None)
+        y = next((int(p) for p in parts if re.match(r'^\d{4}$', p)), None)
+        if not m or not y:
+            fn_parts = (report.file_name or '').replace('.', '_').split('_')
+            for idx, p in enumerate(fn_parts):
+                if re.match(r'^\d{4}$', p) and idx + 1 < len(fn_parts):
+                    try:
+                        cand_y = int(p)
+                        cand_m = int(fn_parts[idx + 1])
+                        if 1 <= cand_m <= 12:
+                            y = cand_y
+                            m = cand_m
+                    except ValueError:
+                        pass
+        if not m:
+            m = (report.generated_date or report.created_at or ist_now()).month
+        if not y:
+            y = (report.generated_date or report.created_at or ist_now()).year
+
+        is_excel = 'EXCEL' in (report.report_type or '').upper() or (report.file_name or '').endswith('.xlsx')
+        try:
+            if is_excel:
+                filepath = generate_excel_report(user.id, y, m)
+            else:
+                filepath = generate_pdf_report(user.id, y, m)
+            if filepath and os.path.exists(filepath):
+                report.file_path = filepath
+                report.file_size = os.path.getsize(filepath)
+                safe_commit(db.session)
+        except Exception as exc:
+            log.error(f"Failed to regenerate report {rid} on the fly: {exc}")
+
+    if not report.file_path or not os.path.exists(report.file_path):
+        return error_response("NOT_FOUND", "Report file could not be loaded from storage.", 404)
 
     report.download_count = (report.download_count or 0) + 1
     report.last_downloaded = ist_now()
