@@ -66,11 +66,15 @@ def api_register():
     if not is_valid:
         return error_response("WEAK_PASSWORD", msg, 400)
 
-    if User.query.filter_by(username=username).first():
-        return error_response("CONFLICT", "Username is already taken.", 409)
+    try:
+        if User.query.filter_by(username=username).first():
+            return error_response("CONFLICT", "Username is already taken.", 409)
 
-    if email and User.query.filter_by(email=email).first():
-        return error_response("CONFLICT", "An account with that email already exists.", 409)
+        if email and User.query.filter_by(email=email).first():
+            return error_response("CONFLICT", "An account with that email already exists.", 409)
+    except Exception as exc:
+        log.warning(f"Database unavailable during register check: {exc}")
+        return error_response("DATABASE_UNAVAILABLE", "The cloud database is currently unreachable or waking up. Please verify the database status and try again.", 503)
 
     user = User(
         username=username,
@@ -129,9 +133,17 @@ def api_login():
     if not login_id or not password:
         return error_response("VALIDATION_ERROR", "Username/email and password are required.", 400)
 
-    user = User.query.filter(
-        (User.username == login_id) | (User.email == login_id)
-    ).first()
+    try:
+        user = User.query.filter(
+            (User.username == login_id) | (User.email == login_id)
+        ).first()
+    except Exception as exc:
+        log.warning(f"Database error during login: {exc}")
+        return error_response(
+            "DATABASE_UNAVAILABLE",
+            "The cloud database is currently unreachable or waking up. If using Aiven Cloud MySQL, please verify 'walletiq-db' is powered on at console.aiven.io.",
+            503
+        )
 
     if not user or not check_password_hash(user.password, password):
         return error_response("UNAUTHORIZED", "Invalid username or password.", 401)

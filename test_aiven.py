@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 from urllib.parse import urlparse, unquote, quote_plus
 from dotenv import load_dotenv
@@ -10,7 +10,7 @@ if hasattr(sys.stderr, 'reconfigure'):
 
 load_dotenv()
 
-def test_connection():
+def check_aiven_connection():
     print("=" * 60)
     print("  WalletIQ -> Aiven MySQL Connectivity Test")
     print("=" * 60)
@@ -99,4 +99,4 @@ def test_connection():
     print("=" * 60)
 
 if __name__ == "__main__":
-    test_connection()
+    check_aiven_connection()

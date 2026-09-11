@@ -146,12 +146,20 @@ async function request(endpoint, options = {}) {
 
   const execute = async () => {
     onRequestStart();
+    const controller = new AbortController();
+    const timeoutMs = options.timeout || 35000;
+    const timeoutTimer = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
+
     try {
       const response = await fetch(url, {
         ...options,
         headers,
         credentials: 'include',
+        signal: options.signal || controller.signal,
       });
+      clearTimeout(timeoutTimer);
 
       // Mark server active on ANY response received from server
       markServerActive();
@@ -196,7 +204,17 @@ async function request(endpoint, options = {}) {
       }
 
       return json.data;
+    } catch (err) {
+      clearTimeout(timeoutTimer);
+      if (err.name === 'AbortError') {
+        const timeoutError = new Error('Server response timed out. The backend or cloud database may be starting up or sleeping. Please try again.');
+        timeoutError.code = 'TIMEOUT';
+        timeoutError.status = 504;
+        throw timeoutError;
+      }
+      throw err;
     } finally {
+      clearTimeout(timeoutTimer);
       onRequestEnd();
       inFlightRequests.delete(cacheKey);
     }
